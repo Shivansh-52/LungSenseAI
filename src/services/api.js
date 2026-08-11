@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 
 const BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
 
-export const analyzeAudio = async (audioFilePath) => {
+const analyzeAudio = async (audioFilePath) => {
   const formData = new FormData();
   const filename = audioFilePath.split('/').pop();
   const file = {
@@ -27,4 +27,37 @@ export const analyzeAudio = async (audioFilePath) => {
     console.warn('API error:', err);
     throw err;
   }
+};
+
+const saveHistory = async (result) => {
+  try {
+    const response = await fetch(`${BASE_URL}/history`, {
+      method: 'POST',
+      body: JSON.stringify(result),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return await response.json();
+  } catch (err) {
+    console.warn('Could not save history', err);
+    throw err;
+  }
+};
+
+const getHistory = async () => {
+  try {
+    const response = await fetch(`${BASE_URL}/history`);
+    const json = await response.json();
+    return json.history || [];
+  } catch (err) {
+    console.warn('Could not fetch history', err);
+    return [];
+  }
+};
+
+export default {
+  analyzeAudio,
+  saveHistory,
+  getHistory,
 };

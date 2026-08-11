@@ -1,9 +1,11 @@
 import { PermissionsAndroid, Platform, Alert } from 'react-native';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 
+import RNFS from 'react-native-fs';
+
 const audioRecorderPlayer = new AudioRecorderPlayer();
 
-const dirs = Platform.OS === 'android' ? '/sdcard/' : '';
+const dirs = Platform.OS === 'android' ? `${RNFS.CachesDirectoryPath}/` : '';
 
 const requestPermission = async () => {
   if (Platform.OS === 'android') {
