@@ -57,7 +57,7 @@ const AnalysisScreen = () => {
           </Animated.View>
           <Icon name="brain" size={24} color={Colors.textPrimary} style={styles.centerIcon} />
         </View>
-        <Text style={styles.title}>Analyzing Data</Text>
+        <Text style={styles.title}>Analyzing Respiratory Sound</Text>
         <Text style={styles.message}>{loadingText}</Text>
       </View>
     </SafeAreaView>

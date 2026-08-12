@@ -174,9 +174,6 @@ const styles = StyleSheet.create({
   timerActive: {
     color: Colors.primary,
     fontWeight: '400',
-    textShadowColor: 'rgba(0, 240, 255, 0.5)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
   },
   timerMax: {
     fontSize: 24,
@@ -202,7 +199,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(0, 240, 255, 0.2)',
+    borderColor: Colors.border,
   },
   actionIcon: {
     marginRight: 8,
@@ -229,7 +226,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   analyzeBtnText: {
-    color: Colors.background,
+    color: '#fff',
     fontWeight: '700',
     fontSize: 16,
     marginRight: 8,

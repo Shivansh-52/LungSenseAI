@@ -71,7 +71,7 @@ const HistoryScreen = () => {
         <View style={styles.centerContainer}>
           <Icon name="history" size={60} color={Colors.textSecondary} style={{ opacity: 0.3, marginBottom: 16 }} />
           <Text style={styles.emptyText}>No history available</Text>
-          <Text style={styles.emptySubText}>Your past predictions will appear here once you connect to MongoDB.</Text>
+          <Text style={styles.emptySubText}>Record your first respiratory sound to see past analyses here.</Text>
         </View>
       ) : (
         <FlatList
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: Colors.border,
   },
   cardHeader: {
     flexDirection: 'row',

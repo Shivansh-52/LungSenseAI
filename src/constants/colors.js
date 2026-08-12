@@ -1,10 +1,12 @@
 export const Colors = {
-  primary: '#00F0FF', // Cyan accent
-  accent: '#7D4CDB', // Deep purple
-  background: '#0B0E14', // Very dark blue/black
-  cardBackground: '#151A25', // Slightly lighter dark blue
-  textPrimary: '#FFFFFF',
-  textSecondary: '#A0AEC0',
-  warning: '#FF3366', // Bright red/pink
-  success: '#00E676', // Bright green
+  primary: '#007AFF', // Clean Medical Blue
+  primaryLight: '#E5F1FF',
+  accent: '#20C997', // Teal/Mint
+  background: '#F8F9FA', // Off-white/Light gray
+  cardBackground: '#FFFFFF', // White
+  textPrimary: '#212529',
+  textSecondary: '#6C757D',
+  warning: '#FF4D4F',
+  success: '#52C41A',
+  border: '#E9ECEF',
 };

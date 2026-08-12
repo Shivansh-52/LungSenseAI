@@ -13,12 +13,12 @@ const ResultScreen = () => {
   const handleRecordAgain = () => {
     navigation.reset({
       index: 0,
-      routes: [{ name: 'Home' }, { name: 'Recording' }],
+      routes: [{ name: 'LungDashboard' }, { name: 'Recording' }],
     });
   };
 
   const handleBackHome = () => {
-    navigation.navigate('Home');
+    navigation.navigate('LungDashboard');
   };
 
   return (
@@ -42,7 +42,7 @@ const ResultScreen = () => {
           
           <TouchableOpacity style={styles.secondaryButton} onPress={handleBackHome}>
             <Icon name="home" size={24} color={Colors.textPrimary} style={styles.btnIcon} />
-            <Text style={styles.secondaryButtonText}>Back to Home</Text>
+            <Text style={styles.secondaryButtonText}>Back to Dashboard</Text>
           </TouchableOpacity>
         </View>
 
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   primaryButtonText: {
-    color: Colors.background,
+    color: '#fff',
     fontWeight: '700',
     fontSize: 16,
   },
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: Colors.border,
   },
   secondaryButtonText: {
     color: Colors.textPrimary,

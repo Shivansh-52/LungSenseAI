@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: Colors.border,
     marginBottom: 20,
   },
   resultRow: {
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   messageBox: {
     marginTop: 10,
     padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: Colors.primaryLight,
     borderRadius: 12,
     borderLeftWidth: 3,
     borderLeftColor: Colors.primary,
