@@ -7,3 +7,5 @@ yarn-debug.log
 metro-bundler-cache-*
 metro-cache/*
 /tmp
+.env
+backend/.env
