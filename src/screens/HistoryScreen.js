@@ -3,24 +3,33 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Activ
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../constants/colors';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
 const HistoryScreen = () => {
   const navigation = useNavigation();
+  const { isAuthenticated } = useAuth();
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
     React.useCallback(() => {
       loadHistory();
-    }, [])
+    }, [isAuthenticated])
   );
 
   const loadHistory = async () => {
     setLoading(true);
     try {
-      const data = await api.getHistory();
-      setHistory(data);
+      if (isAuthenticated) {
+        // Fetch from authenticated endpoint
+        const data = await api.getMyExaminations();
+        setHistory(data.examinations || []);
+      } else {
+        // Fallback to legacy endpoint for guests
+        const data = await api.getHistory();
+        setHistory(data);
+      }
     } catch (e) {
       console.warn(e);
     } finally {
@@ -29,27 +38,45 @@ const HistoryScreen = () => {
   };
 
   const renderItem = ({ item }) => {
-    const isNormal = item.label.toLowerCase().includes('normal') || item.label.toLowerCase().includes('healthy');
+    // Handle both authenticated (examination) and legacy (history) formats
+    const label = item.analysis?.predicted_class || item.label || 'Unknown';
+    const confidence = item.analysis?.confidence || item.confidence || 0;
+    const message = item.analysis?.message || item.message || '';
+    const isNormal = label.toLowerCase().includes('normal') || label.toLowerCase().includes('healthy');
     const statusColor = isNormal ? Colors.success : Colors.warning;
     
-    // Format timestamp if available
+    // Format timestamp
     let timeStr = 'Unknown date';
-    if (item.timestamp) {
-      const date = new Date(item.timestamp);
+    const dateSource = item.recorded_at || item.timestamp;
+    if (dateSource) {
+      const date = new Date(dateSource);
       timeStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
+    const handlePress = () => {
+      if (isAuthenticated && item.id) {
+        navigation.navigate('ExaminationDetail', { examination: item });
+      }
+    };
+
     return (
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.dateText}>{timeStr}</Text>
-          <Text style={[styles.confidence, { color: statusColor }]}>{Math.round(item.confidence * 100)}%</Text>
+      <TouchableOpacity onPress={handlePress} disabled={!isAuthenticated} activeOpacity={0.7}>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.dateText}>{timeStr}</Text>
+            <Text style={[styles.confidence, { color: statusColor }]}>{Math.round(confidence * 100)}%</Text>
+          </View>
+          <View style={styles.cardBody}>
+            <Text style={[styles.label, { color: statusColor }]}>{label}</Text>
+            <Text style={styles.message} numberOfLines={2}>{message}</Text>
+          </View>
+          {isAuthenticated && item.id && (
+            <View style={styles.cardFooter}>
+              <Icon name="chevron-right" size={20} color={Colors.textSecondary} />
+            </View>
+          )}
         </View>
-        <View style={styles.cardBody}>
-          <Text style={[styles.label, { color: statusColor }]}>{item.label}</Text>
-          <Text style={styles.message} numberOfLines={2}>{item.message}</Text>
-        </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -62,6 +89,13 @@ const HistoryScreen = () => {
         <Text style={styles.headerTitle}>Analysis History</Text>
         <View style={styles.placeholder} />
       </View>
+
+      {!isAuthenticated && (
+        <View style={styles.guestBanner}>
+          <Icon name="information" size={18} color={Colors.primary} />
+          <Text style={styles.guestBannerText}>Sign in to save and view your examination history.</Text>
+        </View>
+      )}
 
       {loading ? (
         <View style={styles.centerContainer}>
@@ -76,7 +110,7 @@ const HistoryScreen = () => {
       ) : (
         <FlatList
           data={history}
-          keyExtractor={(item, index) => item._id || index.toString()}
+          keyExtractor={(item, index) => item.id || item._id || index.toString()}
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
@@ -109,6 +143,22 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     width: 44,
+  },
+  guestBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primaryLight,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginHorizontal: 20,
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+  guestBannerText: {
+    fontSize: 13,
+    color: Colors.primary,
+    marginLeft: 8,
+    flex: 1,
   },
   centerContainer: {
     flex: 1,
@@ -166,6 +216,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textSecondary,
     lineHeight: 20,
+  },
+  cardFooter: {
+    alignItems: 'flex-end',
+    marginTop: 8,
   },
 });
 

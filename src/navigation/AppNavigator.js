@@ -17,8 +17,22 @@ import HealthDashboardScreen from '../screens/HealthDashboardScreen';
 import DoctorsScreen from '../screens/DoctorsScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
+// Auth Screens
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
+
+// Feature Screens
+import WellnessScreen from '../screens/WellnessScreen';
+import ReportsScreen from '../screens/ReportsScreen';
+import MedicineRemindersScreen from '../screens/MedicineRemindersScreen';
+import ExaminationDetailScreen from '../screens/ExaminationDetailScreen';
+import PrivacyScreen from '../screens/PrivacyScreen';
+
 const Tab = createBottomTabNavigator();
 const LungStack = createNativeStackNavigator();
+const ProfileStack = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator();
 
 const LungStackNavigator = () => (
   <LungStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
@@ -27,10 +41,21 @@ const LungStackNavigator = () => (
     <LungStack.Screen name="Analysis" component={AnalysisScreen} />
     <LungStack.Screen name="Result" component={ResultScreen} />
     <LungStack.Screen name="History" component={HistoryScreen} />
+    <LungStack.Screen name="ExaminationDetail" component={ExaminationDetailScreen} />
   </LungStack.Navigator>
 );
 
-const AppNavigator = () => {
+const ProfileStackNavigator = () => (
+  <ProfileStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
+    <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
+    <ProfileStack.Screen name="Wellness" component={WellnessScreen} />
+    <ProfileStack.Screen name="Reports" component={ReportsScreen} />
+    <ProfileStack.Screen name="MedicineReminders" component={MedicineRemindersScreen} />
+    <ProfileStack.Screen name="Privacy" component={PrivacyScreen} />
+  </ProfileStack.Navigator>
+);
+
+const TabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -72,8 +97,19 @@ const AppNavigator = () => {
       <Tab.Screen name="LungTab" component={LungStackNavigator} options={{ title: 'Lung' }} />
       <Tab.Screen name="HealthTab" component={HealthDashboardScreen} options={{ title: 'Health' }} />
       <Tab.Screen name="DoctorsTab" component={DoctorsScreen} options={{ title: 'Doctors' }} />
-      <Tab.Screen name="ProfileTab" component={ProfileScreen} options={{ title: 'Profile' }} />
+      <Tab.Screen name="ProfileTab" component={ProfileStackNavigator} options={{ title: 'Profile' }} />
     </Tab.Navigator>
+  );
+};
+
+const AppNavigator = () => {
+  return (
+    <RootStack.Navigator screenOptions={{ headerShown: false }}>
+      <RootStack.Screen name="Main" component={TabNavigator} />
+      <RootStack.Screen name="Login" component={LoginScreen} options={{ animation: 'slide_from_bottom' }} />
+      <RootStack.Screen name="Register" component={RegisterScreen} options={{ animation: 'slide_from_bottom' }} />
+      <RootStack.Screen name="Onboarding" component={OnboardingScreen} options={{ animation: 'slide_from_right' }} />
+    </RootStack.Navigator>
   );
 };
 

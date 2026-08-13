@@ -9,3 +9,7 @@ metro-cache/*
 /tmp
 .env
 backend/.env
+__pycache__/
+*.pyc
+backend/generated_reports/
+.idea/
