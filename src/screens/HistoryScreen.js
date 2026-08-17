@@ -22,13 +22,8 @@ const HistoryScreen = () => {
     setLoading(true);
     try {
       if (isAuthenticated) {
-        // Fetch from authenticated endpoint
-        const data = await api.getMyExaminations();
-        setHistory(data.examinations || []);
-      } else {
-        // Fallback to legacy endpoint for guests
-        const data = await api.getHistory();
-        setHistory(data);
+        const data = await api.getExaminations();
+        setHistory(data.items || data || []);
       }
     } catch (e) {
       console.warn(e);
@@ -38,16 +33,14 @@ const HistoryScreen = () => {
   };
 
   const renderItem = ({ item }) => {
-    // Handle both authenticated (examination) and legacy (history) formats
-    const label = item.analysis?.predicted_class || item.label || 'Unknown';
-    const confidence = item.analysis?.confidence || item.confidence || 0;
-    const message = item.analysis?.message || item.message || '';
+    const label = item.predicted_class || 'Unknown';
+    const confidence = item.confidence || 0;
     const isNormal = label.toLowerCase().includes('normal') || label.toLowerCase().includes('healthy');
     const statusColor = isNormal ? Colors.success : Colors.warning;
     
     // Format timestamp
     let timeStr = 'Unknown date';
-    const dateSource = item.recorded_at || item.timestamp;
+    const dateSource = item.created_at || item.timestamp;
     if (dateSource) {
       const date = new Date(dateSource);
       timeStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -68,11 +61,11 @@ const HistoryScreen = () => {
           </View>
           <View style={styles.cardBody}>
             <Text style={[styles.label, { color: statusColor }]}>{label}</Text>
-            <Text style={styles.message} numberOfLines={2}>{message}</Text>
           </View>
           {isAuthenticated && item.id && (
             <View style={styles.cardFooter}>
-              <Icon name="chevron-right" size={20} color={Colors.textSecondary} />
+              <Text style={styles.detailsText}>View Details</Text>
+              <Icon name="chevron-right" size={20} color={Colors.primary} />
             </View>
           )}
         </View>
@@ -86,7 +79,7 @@ const HistoryScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Icon name="arrow-left" size={28} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Analysis History</Text>
+        <Text style={styles.headerTitle}>Examination History</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -110,7 +103,7 @@ const HistoryScreen = () => {
       ) : (
         <FlatList
           data={history}
-          keyExtractor={(item, index) => item.id || item._id || index.toString()}
+          keyExtractor={(item, index) => item.id || index.toString()}
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
@@ -121,106 +114,25 @@ const HistoryScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 20,
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  placeholder: {
-    width: 44,
-  },
-  guestBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.primaryLight,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginHorizontal: 20,
-    borderRadius: 10,
-    marginBottom: 8,
-  },
-  guestBannerText: {
-    fontSize: 13,
-    color: Colors.primary,
-    marginLeft: 8,
-    flex: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-    marginBottom: 8,
-  },
-  emptySubText: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  listContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  card: {
-    backgroundColor: Colors.cardBackground,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  dateText: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  confidence: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  cardBody: {
-    marginTop: 4,
-  },
-  label: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  message: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  cardFooter: {
-    alignItems: 'flex-end',
-    marginTop: 8,
-  },
+  container: { flex: 1, backgroundColor: Colors.background },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20 },
+  backButton: { padding: 8 },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.textPrimary },
+  placeholder: { width: 44 },
+  guestBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primaryLight, paddingHorizontal: 16, paddingVertical: 10, marginHorizontal: 20, borderRadius: 10, marginBottom: 8 },
+  guestBannerText: { fontSize: 13, color: Colors.primary, marginLeft: 8, flex: 1 },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
+  emptyText: { fontSize: 20, fontWeight: '600', color: Colors.textPrimary, marginBottom: 8 },
+  emptySubText: { fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22 },
+  listContent: { padding: 20, paddingBottom: 40 },
+  card: { backgroundColor: Colors.cardBackground, borderRadius: 16, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: Colors.border },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  dateText: { fontSize: 13, color: Colors.textSecondary },
+  confidence: { fontSize: 14, fontWeight: '700' },
+  cardBody: { marginTop: 4 },
+  label: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  cardFooter: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 8 },
+  detailsText: { fontSize: 13, color: Colors.primary, fontWeight: '600', marginRight: 4 },
 });
 
 export default HistoryScreen;

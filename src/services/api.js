@@ -1,16 +1,20 @@
 import { Platform } from 'react-native';
-
-const BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://localhost:8000';
+import { API_BASE_URL } from '../config/api';
 
 // ── Token management ─────────────────────────────────────────────────────────
 
 let authToken = null;
+let logoutCallback = null; // A callback to force logout on 401
 
 const setAuthToken = (token) => {
   authToken = token;
 };
 
 const getAuthToken = () => authToken;
+
+const setLogoutCallback = (cb) => {
+  logoutCallback = cb;
+};
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -23,14 +27,26 @@ const getHeaders = (includeAuth = false, contentType = 'application/json') => {
 
 const handleResponse = async (response) => {
   if (response.status === 401) {
-    // Token expired or invalid — caller should handle logout
+    if (logoutCallback) {
+      logoutCallback();
+    }
     const err = new Error('Unauthorized');
     err.status = 401;
     throw err;
   }
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const err = new Error(errorData.detail || `Request failed (${response.status})`);
+    let errorData = {};
+    try {
+      errorData = await response.json();
+    } catch (e) {}
+    
+    // Fallback if backend returns standard error wrapping: { success: false, error: { message: "..." } }
+    let errorMsg = errorData.detail;
+    if (errorData.error && errorData.error.message) {
+      errorMsg = errorData.error.message;
+    }
+    
+    const err = new Error(errorMsg || `Request failed (${response.status})`);
     err.status = response.status;
     err.data = errorData;
     throw err;
@@ -41,22 +57,21 @@ const handleResponse = async (response) => {
 
 // ── Auth endpoints ───────────────────────────────────────────────────────────
 
-const register = async (fullName, email, password, confirmPassword) => {
-  const response = await fetch(`${BASE_URL}/auth/register`, {
+const register = async (name, email, password) => {
+  const response = await fetch(`${API_BASE_URL}/auth/register`, {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify({
-      full_name: fullName,
+      name,
       email,
       password,
-      confirm_password: confirmPassword,
     }),
   });
   return handleResponse(response);
 };
 
 const login = async (email, password) => {
-  const response = await fetch(`${BASE_URL}/auth/login`, {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify({ email, password }),
@@ -65,265 +80,89 @@ const login = async (email, password) => {
 };
 
 const getMe = async () => {
-  const response = await fetch(`${BASE_URL}/auth/me`, {
+  const response = await fetch(`${API_BASE_URL}/auth/me`, {
     headers: getHeaders(true),
   });
   return handleResponse(response);
 };
 
-const logout = async () => {
+
+// ── Prediction & Examination endpoints ───────────────────────────────────────
+
+const predictAudio = async (audioFilePath) => {
+  const formData = new FormData();
+  const filename = audioFilePath.split('/').pop() || 'recording.mp4';
+  const ext = filename.split('.').pop();
+  
+  // React Native FormData requires { uri, name, type }
+  const file = {
+    uri: Platform.OS === 'android' ? `file://${audioFilePath}` : audioFilePath,
+    name: filename,
+    type: `audio/${ext === 'mp4' ? 'mp4' : 'wav'}`,
+  };
+  formData.append('audio', file);
+
   try {
-    await fetch(`${BASE_URL}/auth/logout`, {
+    const response = await fetch(`${API_BASE_URL}/predict`, {
       method: 'POST',
-      headers: getHeaders(true),
+      body: formData,
+      headers: {
+        Accept: 'application/json',
+        // Do NOT set Content-Type explicitly; fetch sets the multipart boundary automatically
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+      },
     });
-  } catch (e) {
-    // Ignore — stateless JWT
+    return handleResponse(response);
+  } catch (err) {
+    if (!err.status) {
+      throw new Error('Unable to connect to LungSenseAI. Please check your internet connection and try again.');
+    }
+    throw err;
   }
 };
 
-
-// ── User endpoints ───────────────────────────────────────────────────────────
-
-const getMyProfile = async () => {
-  const response = await fetch(`${BASE_URL}/users/me`, {
-    headers: getHeaders(true),
-  });
-  return handleResponse(response);
-};
-
-const updateProfile = async (data) => {
-  const response = await fetch(`${BASE_URL}/users/me`, {
-    method: 'PUT',
-    headers: getHeaders(true),
-    body: JSON.stringify(data),
-  });
-  return handleResponse(response);
-};
-
-const deleteAccount = async () => {
-  const response = await fetch(`${BASE_URL}/users/me`, {
-    method: 'DELETE',
-    headers: getHeaders(true),
-  });
-  return handleResponse(response);
-};
-
-const saveHealthProfile = async (data) => {
-  const response = await fetch(`${BASE_URL}/users/health-profile`, {
-    method: 'POST',
-    headers: getHeaders(true),
-    body: JSON.stringify(data),
-  });
-  return handleResponse(response);
-};
-
-
-// ── Examination endpoints ────────────────────────────────────────────────────
-
-const saveExamination = async (data) => {
-  const response = await fetch(`${BASE_URL}/examinations`, {
-    method: 'POST',
-    headers: getHeaders(true),
-    body: JSON.stringify(data),
-  });
-  return handleResponse(response);
-};
-
-const getMyExaminations = async () => {
-  const response = await fetch(`${BASE_URL}/examinations/my`, {
+const getExaminations = async (page = 1, pageSize = 20) => {
+  const response = await fetch(`${API_BASE_URL}/examinations?page=${page}&page_size=${pageSize}`, {
     headers: getHeaders(true),
   });
   return handleResponse(response);
 };
 
 const getExamination = async (id) => {
-  const response = await fetch(`${BASE_URL}/examinations/${id}`, {
+  const response = await fetch(`${API_BASE_URL}/examinations/${id}`, {
     headers: getHeaders(true),
   });
   return handleResponse(response);
 };
 
-
-// ── Health endpoints ─────────────────────────────────────────────────────────
-
-const saveHealthMetric = async (metricType, value, unit = '') => {
-  const response = await fetch(`${BASE_URL}/health/metrics`, {
-    method: 'POST',
-    headers: getHeaders(true),
-    body: JSON.stringify({ metric_type: metricType, value, unit }),
-  });
-  return handleResponse(response);
-};
-
-const getHealthMetrics = async (metricType = null) => {
-  let url = `${BASE_URL}/health/metrics`;
-  if (metricType) url += `?metric_type=${metricType}`;
-  const response = await fetch(url, {
-    headers: getHeaders(true),
-  });
-  return handleResponse(response);
-};
-
-const calculateBMI = async (height, weight) => {
-  const response = await fetch(`${BASE_URL}/health/bmi`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({ height, weight }),
-  });
-  return handleResponse(response);
-};
-
-
-// ── Wellness endpoints ───────────────────────────────────────────────────────
-
-const getWellnessPlan = async () => {
-  const response = await fetch(`${BASE_URL}/wellness/plan`, {
-    headers: getHeaders(true),
-  });
-  return handleResponse(response);
-};
-
-
-// ── Report endpoints ─────────────────────────────────────────────────────────
-
-const getMyReports = async () => {
-  const response = await fetch(`${BASE_URL}/reports/my`, {
-    headers: getHeaders(true),
-  });
-  return handleResponse(response);
-};
-
-const downloadExaminationPDF = async (examinationId) => {
-  const response = await fetch(`${BASE_URL}/reports/examination/${examinationId}/pdf`, {
-    headers: { Authorization: `Bearer ${authToken}` },
-  });
-  if (!response.ok) {
-    throw new Error('Failed to download PDF');
-  }
-  // Return the blob for saving
-  const blob = await response.blob();
-  return blob;
-};
-
-
-// ── Medicine endpoints ───────────────────────────────────────────────────────
-
-const getMedicineReminders = async () => {
-  const response = await fetch(`${BASE_URL}/medicines`, {
-    headers: getHeaders(true),
-  });
-  return handleResponse(response);
-};
-
-const createMedicineReminder = async (data) => {
-  const response = await fetch(`${BASE_URL}/medicines`, {
-    method: 'POST',
-    headers: getHeaders(true),
-    body: JSON.stringify(data),
-  });
-  return handleResponse(response);
-};
-
-const deleteMedicineReminder = async (id) => {
-  const response = await fetch(`${BASE_URL}/medicines/${id}`, {
+const deleteExamination = async (id) => {
+  const response = await fetch(`${API_BASE_URL}/examinations/${id}`, {
     method: 'DELETE',
     headers: getHeaders(true),
   });
   return handleResponse(response);
 };
 
+// ── Report endpoints ─────────────────────────────────────────────────────────
 
-// ── Preserved original endpoints ─────────────────────────────────────────────
-
-const analyzeAudio = async (audioFilePath) => {
-  const formData = new FormData();
-  const filename = audioFilePath.split('/').pop();
-  const file = {
-    uri: Platform.OS === 'android' ? `file://${audioFilePath}` : audioFilePath,
-    name: filename,
-    type: 'audio/mp4',
-  };
-  formData.append('file', file);
-
-  try {
-    const response = await fetch(`${BASE_URL}/predict`, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        Accept: 'application/json',
-        // NOTE: Do NOT set Content-Type; fetch will set multipart boundary automatically
-      },
-    });
-    const json = await response.json();
-    return json;
-  } catch (err) {
-    console.warn('API error:', err);
-    throw err;
-  }
+const getReportData = async (examinationId) => {
+  const response = await fetch(`${API_BASE_URL}/examinations/${examinationId}/report-data`, {
+    headers: getHeaders(true),
+  });
+  return handleResponse(response);
 };
-
-const saveHistory = async (result) => {
-  try {
-    const response = await fetch(`${BASE_URL}/history`, {
-      method: 'POST',
-      body: JSON.stringify(result),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    return await response.json();
-  } catch (err) {
-    console.warn('Could not save history', err);
-    throw err;
-  }
-};
-
-const getHistory = async () => {
-  try {
-    const response = await fetch(`${BASE_URL}/history`);
-    const json = await response.json();
-    return json.history || [];
-  } catch (err) {
-    console.warn('Could not fetch history', err);
-    return [];
-  }
-};
-
 
 export default {
-  // Token management
   setAuthToken,
   getAuthToken,
-  // Auth
+  setLogoutCallback,
   register,
   login,
   getMe,
-  logout,
-  // User
-  getMyProfile,
-  updateProfile,
-  deleteAccount,
-  saveHealthProfile,
-  // Examinations
-  saveExamination,
-  getMyExaminations,
+  predictAudio,
+  getExaminations,
   getExamination,
-  // Health
-  saveHealthMetric,
-  getHealthMetrics,
-  calculateBMI,
-  // Wellness
-  getWellnessPlan,
-  // Reports
-  getMyReports,
-  downloadExaminationPDF,
-  // Medicines
-  getMedicineReminders,
-  createMedicineReminder,
-  deleteMedicineReminder,
-  // Preserved originals
-  analyzeAudio,
-  saveHistory,
-  getHistory,
+  deleteExamination,
+  getReportData,
+  API_BASE_URL,
 };

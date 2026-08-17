@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: lungsenseai-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_NAME
+        value: lungsense_ai
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 1440
+      - key: MAX_UPLOAD_SIZE_MB
+        value: 10
+      - key: CORS_ORIGINS
+        value: "*"
+      # The following must be set via the Render Dashboard manually for security:
+      # - MONGODB_URI
+      # - JWT_SECRET_KEY

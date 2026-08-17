@@ -28,10 +28,10 @@ const RegisterScreen = ({ navigation }) => {
     setLoading(true);
     try {
       await register(fullName.trim(), email.trim(), password, confirmPassword);
-      // After registration, navigate to onboarding
+      // After registration, navigate to Home
       navigation.reset({
         index: 0,
-        routes: [{ name: 'Onboarding' }],
+        routes: [{ name: 'Main' }],
       });
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');

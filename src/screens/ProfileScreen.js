@@ -90,34 +90,7 @@ const ProfileScreen = ({ navigation }) => {
           </TouchableOpacity>
         </Card>
 
-        <SectionHeader title="Health & Wellness" />
-        <Card style={styles.menuCard}>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('Wellness')}>
-            <Icon name="leaf" size={24} color={Colors.accent} />
-            <Text style={styles.menuText}>Wellness Routine</Text>
-            <Icon name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </TouchableOpacity>
-          
-          <View style={styles.divider} />
-          
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => navigation.navigate('MedicineReminders')}>
-            <Icon name="medkit" size={24} color="#FF6B6B" />
-            <Text style={styles.menuText}>Medicine Reminders</Text>
-            <Icon name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </TouchableOpacity>
-          
-          <View style={styles.divider} />
-          
-          <TouchableOpacity style={styles.menuItem} onPress={() => {}}>
-            <Icon name="analytics" size={24} color="#722ED1" />
-            <Text style={styles.menuText}>Health Records</Text>
-            <Icon name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </TouchableOpacity>
-        </Card>
+        {/* Removed Health & Wellness Section */}
 
         <SectionHeader title="Settings" />
         <Card style={styles.menuCard}>

@@ -4,7 +4,6 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Colors } from '../constants/colors';
 import api from '../services/api';
-import mockPrediction from '../utils/mockPrediction';
 
 const AnalysisScreen = () => {
   const navigation = useNavigation();
@@ -24,21 +23,27 @@ const AnalysisScreen = () => {
     ).start();
 
     const analyze = async () => {
-      setTimeout(() => setLoadingText('Running AI model...'), 1500);
-      setTimeout(() => setLoadingText('Finalizing results...'), 3000);
-      
-      await new Promise(res => setTimeout(res, 4000));
-      
-      const result = await mockPrediction();
-      
-      // Save to backend history
       try {
-        await api.saveHistory(result);
-      } catch(e) {
-        console.warn('Could not save history to cloud', e);
+        setLoadingText('Uploading audio for analysis...');
+        
+        // Let the loading text show for a moment
+        await new Promise(res => setTimeout(res, 500));
+        
+        const response = await api.predictAudio(audioPath);
+        
+        if (response.success) {
+          setLoadingText('Finalizing results...');
+          await new Promise(res => setTimeout(res, 500));
+          navigation.replace('Result', { predictionResult: response });
+        } else {
+          throw new Error('Prediction failed');
+        }
+      } catch (err) {
+        setLoadingText('Analysis failed.');
+        console.warn('API Error:', err);
+        // Navigate to result with error or show alert
+        navigation.replace('Result', { error: err.message || 'Analysis failed. Please check your connection and try again.' });
       }
-
-      navigation.replace('Result', { prediction: result });
     };
     analyze();
   }, []);

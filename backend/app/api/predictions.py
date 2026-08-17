@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from app.ml.model import predict_audio
 from app.utils.dependencies import get_optional_user
 from app.db.mongodb import get_database
+from app.config import MAX_UPLOAD_SIZE_MB
 
 router = APIRouter(tags=["Predictions"])
 
@@ -21,6 +22,13 @@ async def predict(audio: UploadFile = File(...), user: dict = Depends(get_option
     if not audio:
         return JSONResponse(status_code=400, content={"success": False, "error": {"code": "MISSING_AUDIO", "message": "No audio file provided."}})
         
+    audio.file.seek(0, os.SEEK_END)
+    file_size_mb = audio.file.tell() / (1024 * 1024)
+    audio.file.seek(0)
+    
+    if file_size_mb > MAX_UPLOAD_SIZE_MB:
+        return JSONResponse(status_code=413, content={"success": False, "error": {"code": "FILE_TOO_LARGE", "message": f"Audio file exceeds the maximum size of {MAX_UPLOAD_SIZE_MB}MB."}})
+
     filename = audio.filename.lower()
     if not (filename.endswith(".wav") or filename.endswith(".mp3") or filename.endswith(".m4a")):
         return JSONResponse(status_code=400, content={"success": False, "error": {"code": "UNSUPPORTED_FORMAT", "message": "Only .wav, .mp3, and .m4a are supported."}})

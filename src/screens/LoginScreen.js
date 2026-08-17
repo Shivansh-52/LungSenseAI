@@ -23,7 +23,10 @@ const LoginScreen = ({ navigation }) => {
     setLoading(true);
     try {
       await login(email.trim(), password);
-      // Navigation handled by AppNavigator detecting auth state
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Main' }],
+      });
     } catch (err) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {

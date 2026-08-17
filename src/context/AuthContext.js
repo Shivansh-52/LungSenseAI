@@ -19,6 +19,14 @@ export const AuthProvider = ({ children }) => {
 
   // On mount: check for saved token and validate it
   useEffect(() => {
+    // Register 401 interceptor
+    api.setLogoutCallback(async () => {
+      await clearAllAuthData();
+      api.setAuthToken(null);
+      setToken(null);
+      setUser(null);
+    });
+
     const bootstrapAuth = async () => {
       try {
         const savedToken = await loadAuthToken();
