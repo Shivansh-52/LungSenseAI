@@ -1,0 +1,31 @@
+{
+    "model_name": "CNN + BiLSTM",
+    "checkpoint_path": "models/cnn_lstm_best.pth",
+    "input_shape": [1, 64, 461],
+    "sample_rate": 16000,
+    "n_mels": 64,
+    "n_fft": 400,
+    "hop_length": 160,
+    "win_length": 400,
+    "f_min": 0,
+    "f_max": 8000,
+    "duration": 4.6,
+    "normalization": "peak",
+    "class_mapping": {
+        "Normal": 0,
+        "Crackle": 1,
+        "Wheeze": 2,
+        "Crackle + Wheeze": 3
+    },
+    "class_weights": [
+        0.46686471663619744,
+        0.9186151079136691,
+        1.9682080924855492,
+        3.8258426966292136
+    ],
+    "augmentation": "None",
+    "seed": 42,
+    "optimizer": "AdamW",
+    "learning_rate": 0.001,
+    "batch_size": 32
+}

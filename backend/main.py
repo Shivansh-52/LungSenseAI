@@ -1,4 +1,7 @@
 import os
+import shutil
+import tempfile
+import time
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +10,7 @@ from datetime import datetime
 from typing import List
 
 from database import connect_to_mongo, close_mongo_connection, get_database
+from ml.model import load_model, is_model_loaded, predict_audio
 from routes.auth import router as auth_router
 from routes.users import router as users_router
 from routes.examinations import router as examinations_router
@@ -34,12 +38,13 @@ app.add_middleware(
 # ── Lifecycle events ──────────────────────────────────────────────────────────
 
 @app.on_event("startup")
-async def startup_db_client():
+async def startup_event():
     await connect_to_mongo()
+    load_model()
 
 
 @app.on_event("shutdown")
-async def shutdown_db_client():
+async def shutdown_event():
     await close_mongo_connection()
 
 
@@ -65,7 +70,7 @@ class PredictionResult(BaseModel):
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint with database status."""
+    """Health check endpoint with database and model status."""
     db = get_database()
     db_status = "connected" if db is not None else "disconnected"
 
@@ -76,7 +81,8 @@ async def health_check():
         db_status = "error"
 
     return {
-        "status": "ok",
+        "status": "healthy",
+        "model_loaded": is_model_loaded(),
         "message": "LungSense AI backend is running",
         "database": db_status,
         "version": "2.0.0",
@@ -84,20 +90,57 @@ async def health_check():
 
 
 @app.post("/predict")
-async def predict(file: UploadFile = File(...)):
+async def predict(audio: UploadFile = File(...)):
     """
-    Predict respiratory sound pattern from an audio file.
-    Currently returns a mock/dummy response.
-    Future: ICBHI CNN model integration.
+    Predict respiratory sound pattern from an audio file using frozen CNN + BiLSTM model.
     """
-    # In future, load ML model and process the audio file.
-    # For now, return a dummy response.
-    dummy_response = {
-        "label": "Wheeze",
-        "confidence": 0.87,
-        "message": "Wheezing respiratory sound pattern detected."
+    if not audio:
+        return JSONResponse(status_code=400, content={"success": False, "error": {"code": "MISSING_AUDIO", "message": "No audio file provided."}})
+        
+    filename = audio.filename.lower()
+    if not (filename.endswith(".wav") or filename.endswith(".mp3") or filename.endswith(".m4a")):
+        return JSONResponse(status_code=400, content={"success": False, "error": {"code": "UNSUPPORTED_FORMAT", "message": "Only .wav, .mp3, and .m4a are supported."}})
+    
+    # Store temporary file
+    try:
+        # Generate safe temporary filename
+        fd, temp_path = tempfile.mkstemp(suffix=os.path.splitext(filename)[1])
+        with os.fdopen(fd, "wb") as temp_file:
+            shutil.copyfileobj(audio.file, temp_file)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": {"code": "FILE_SAVE_ERROR", "message": "Could not save uploaded audio temporarily."}})
+        
+    # Inference
+    try:
+        prediction_result = predict_audio(temp_path)
+    except ValueError as e:
+        # Preprocessing error
+        os.remove(temp_path)
+        return JSONResponse(status_code=400, content={"success": False, "error": {"code": "INVALID_AUDIO", "message": "The uploaded audio could not be processed."}})
+    except Exception as e:
+        os.remove(temp_path)
+        return JSONResponse(status_code=500, content={"success": False, "error": {"code": "INFERENCE_ERROR", "message": "Model inference failed."}})
+        
+    # Delete temporary file
+    try:
+        os.remove(temp_path)
+    except Exception:
+        pass
+        
+    return {
+        "success": True,
+        "prediction": {
+            "class_id": prediction_result["class_id"],
+            "class_name": prediction_result["class_name"],
+            "confidence": prediction_result["confidence"]
+        },
+        "probabilities": prediction_result["probabilities"],
+        "model": {
+            "name": "CNN + BiLSTM",
+            "version": "1.0"
+        },
+        "disclaimer": "This is an AI-assisted respiratory sound classification result and is not a medical diagnosis. Consult a qualified healthcare professional for medical evaluation."
     }
-    return JSONResponse(content=dummy_response)
 
 
 @app.post("/history")
