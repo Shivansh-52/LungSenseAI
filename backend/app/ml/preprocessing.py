@@ -4,7 +4,7 @@ import torch
 import json
 import os
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "models", "final_model_config.json")
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "models", "final_model_config.json")
 
 def load_config():
     with open(CONFIG_PATH, "r") as f:

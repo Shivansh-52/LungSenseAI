@@ -3,10 +3,10 @@ import numpy as np
 import torch.nn as nn
 import os
 import json
-from ml.preprocessing import preprocess_audio
+from app.ml.preprocessing import preprocess_audio
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "models", "final_model_config.json")
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "models", "cnn_lstm_best.pth")
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "models", "final_model_config.json")
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "models", "cnn_lstm_best.pth")
 
 class CNN_BiLSTM(nn.Module):
     def __init__(self, num_classes=4, in_channels=1, hidden_size=128, num_layers=1, dropout=0.5):

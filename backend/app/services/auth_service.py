@@ -1,7 +1,8 @@
 from datetime import datetime
-from database import get_database
-from utils.security import hash_password, verify_password, create_access_token
-from models.user import serialize_user
+from app.db.mongodb import get_database
+from app.auth.password import hash_password, verify_password
+from app.auth.jwt import create_access_token
+from app.models.user import serialize_user
 
 
 async def get_user_by_email(email: str) -> dict | None:
@@ -12,7 +13,7 @@ async def get_user_by_email(email: str) -> dict | None:
     return await db.users.find_one({"email": email.lower().strip()})
 
 
-async def register_user(full_name: str, email: str, password: str, phone: str = "", date_of_birth: str = "", gender: str = "") -> dict:
+async def register_user(name: str, email: str, password: str) -> dict:
     """
     Register a new user. Returns {"access_token": ..., "user": ...}.
     Raises ValueError if email already exists.
@@ -28,14 +29,12 @@ async def register_user(full_name: str, email: str, password: str, phone: str = 
 
     now = datetime.utcnow()
     user_doc = {
-        "full_name": full_name.strip(),
+        "name": name.strip(),
         "email": email.lower().strip(),
         "password_hash": hash_password(password),
-        "phone": phone,
-        "date_of_birth": date_of_birth,
-        "gender": gender,
         "created_at": now,
         "updated_at": now,
+        "is_active": True,
     }
 
     result = await db.users.insert_one(user_doc)

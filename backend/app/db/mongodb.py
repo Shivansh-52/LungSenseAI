@@ -1,5 +1,5 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-from config import MONGODB_URI, DATABASE_NAME
+from app.config import MONGODB_URI, DATABASE_NAME
 
 client: AsyncIOMotorClient = None
 db = None
@@ -41,18 +41,10 @@ async def create_indexes():
         # Unique email index
         await db.users.create_index("email", unique=True)
 
-        # User-scoped query indexes
-        await db.health_profiles.create_index("user_id")
-        await db.lung_examinations.create_index("user_id")
-        await db.lung_examinations.create_index([("user_id", 1), ("recorded_at", -1)])
-        await db.lung_analysis_results.create_index("examination_id")
-        await db.health_metrics.create_index("user_id")
-        await db.health_metrics.create_index([("user_id", 1), ("metric_type", 1)])
-        await db.medicine_reminders.create_index("user_id")
-        await db.wellness_plans.create_index("user_id")
-        await db.reports.create_index("user_id")
-        await db.reports.create_index("examination_id")
-        await db.appointments.create_index("user_id")
+        # Examination queries
+        await db.examinations.create_index("user_id")
+        await db.examinations.create_index("created_at")
+        await db.examinations.create_index([("user_id", 1), ("created_at", -1)])
 
         print("MongoDB indexes created successfully.")
     except Exception as e:

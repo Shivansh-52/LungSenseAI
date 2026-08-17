@@ -9,13 +9,11 @@ def serialize_user(user: dict) -> dict:
         return None
     return {
         "id": str(user["_id"]),
-        "full_name": user.get("full_name", ""),
+        "name": user.get("name", ""),
         "email": user.get("email", ""),
-        "phone": user.get("phone", ""),
-        "date_of_birth": user.get("date_of_birth", ""),
-        "gender": user.get("gender", ""),
         "created_at": str(user.get("created_at", "")),
         "updated_at": str(user.get("updated_at", "")),
+        "is_active": user.get("is_active", True)
     }
 
 

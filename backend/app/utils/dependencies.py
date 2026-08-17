@@ -2,8 +2,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError
 from bson import ObjectId
-from database import get_database
-from utils.security import decode_access_token
+from app.db.mongodb import get_database
+from app.auth.jwt import decode_access_token
 
 # Use HTTPBearer scheme — expects "Authorization: Bearer <token>"
 security_scheme = HTTPBearer(auto_error=True)

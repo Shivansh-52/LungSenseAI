@@ -4,19 +4,15 @@ import re
 
 
 class RegisterRequest(BaseModel):
-    full_name: str
+    name: str
     email: str
     password: str
-    confirm_password: str
-    phone: Optional[str] = ""
-    date_of_birth: Optional[str] = ""
-    gender: Optional[str] = ""
 
-    @field_validator("full_name")
+    @field_validator("name")
     @classmethod
     def validate_name(cls, v):
         if not v or len(v.strip()) < 2:
-            raise ValueError("Full name must be at least 2 characters")
+            raise ValueError("Name must be at least 2 characters")
         return v.strip()
 
     @field_validator("email")
@@ -34,13 +30,7 @@ class RegisterRequest(BaseModel):
             raise ValueError("Password must be at least 6 characters")
         return v
 
-    @field_validator("confirm_password")
-    @classmethod
-    def validate_confirm_password(cls, v, info):
-        password = info.data.get("password")
-        if password and v != password:
-            raise ValueError("Passwords do not match")
-        return v
+
 
 
 class LoginRequest(BaseModel):
