@@ -168,11 +168,13 @@ async def get_examination_report_data(
 
     prediction = doc.get("prediction", {})
     predicted_class = prediction.get("class_name", "Unknown")
+    disease_prediction = doc.get("disease_prediction") or {}
+    copd_prob = disease_prediction.get("copd_probability")
 
     return {
         "report_title": "AI-Assisted Respiratory Sound Examination Report",
         "examination": serialize_examination(doc),
-        "interpretation": get_class_interpretation(predicted_class),
+        "interpretation": get_class_interpretation(predicted_class, copd_prob),
         "wellness_guidance": get_general_wellness_guidance(),
         "daily_routine": get_daily_routine(),
         "professional_guidance": get_professional_guidance(),

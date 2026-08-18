@@ -116,7 +116,7 @@ const ExaminationDetailScreen = ({ navigation, route }) => {
             </View>
 
             <View style={styles.resultRow}>
-              <Text style={styles.label}>COPD Probability</Text>
+              <Text style={styles.label}>COPD-associated probability</Text>
               <Text style={[styles.value, { color: Colors.primary }]}>
                 {Math.round((examination.disease_prediction.copd_probability || 0) * 100)}%
               </Text>
@@ -186,7 +186,7 @@ const ExaminationDetailScreen = ({ navigation, route }) => {
         <View style={styles.disclaimerBox}>
           <Icon name="alert-circle" size={16} color={Colors.warning} />
           <Text style={styles.disclaimerText}>
-            Research/educational prototype only. Do not use for medical diagnosis.
+            This AI-generated result is a research prediction based on respiratory audio. It is not a medical diagnosis and has not been clinically validated. Please consult a qualified healthcare professional for diagnosis and treatment.
           </Text>
         </View>
 
