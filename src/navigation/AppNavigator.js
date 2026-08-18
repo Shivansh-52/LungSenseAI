@@ -21,8 +21,17 @@ import ProfileScreen from '../screens/ProfileScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 
+// Health Screens
+import BMIScreen from '../screens/BMIScreen';
+import StepsScreen from '../screens/StepsScreen';
+import HydrationScreen from '../screens/HydrationScreen';
+import SleepScreen from '../screens/SleepScreen';
+import ActivityScreen from '../screens/ActivityScreen';
+import RoutineScreen from '../screens/RoutineScreen';
+
 const Tab = createBottomTabNavigator();
 const LungStack = createNativeStackNavigator();
+const HealthStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
 const RootStack = createNativeStackNavigator();
 
@@ -41,6 +50,18 @@ const ProfileStackNavigator = () => (
   <ProfileStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
     <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
   </ProfileStack.Navigator>
+);
+
+const HealthStackNavigator = () => (
+  <HealthStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
+    <HealthStack.Screen name="HomeMain" component={HomeDashboardScreen} />
+    <HealthStack.Screen name="BMI" component={BMIScreen} />
+    <HealthStack.Screen name="Steps" component={StepsScreen} />
+    <HealthStack.Screen name="Hydration" component={HydrationScreen} />
+    <HealthStack.Screen name="Sleep" component={SleepScreen} />
+    <HealthStack.Screen name="Activity" component={ActivityScreen} />
+    <HealthStack.Screen name="Routine" component={RoutineScreen} />
+  </HealthStack.Navigator>
 );
 
 const TabNavigator = () => {
@@ -79,7 +100,7 @@ const TabNavigator = () => {
         }
       })}
     >
-      <Tab.Screen name="HomeTab" component={HomeDashboardScreen} options={{ title: 'Home' }} />
+      <Tab.Screen name="HomeTab" component={HealthStackNavigator} options={{ title: 'Home' }} />
       <Tab.Screen name="LungTab" component={LungStackNavigator} options={{ title: 'Examination' }} />
       {isAuthenticated && (
         <Tab.Screen name="ProfileTab" component={ProfileStackNavigator} options={{ title: 'Profile' }} />

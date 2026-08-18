@@ -152,6 +152,75 @@ const getReportData = async (examinationId) => {
   return handleResponse(response);
 };
 
+// ── Wellness & Health Endpoints ──────────────────────────────────────────────
+
+const getHealthProfile = async () => {
+  const response = await fetch(`${API_BASE_URL}/health-profile`, {
+    headers: getHeaders(true),
+  });
+  return handleResponse(response);
+};
+
+const updateHealthProfile = async (data) => {
+  const response = await fetch(`${API_BASE_URL}/health-profile`, {
+    method: 'PUT',
+    headers: getHeaders(true),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(response);
+};
+
+const getWellnessToday = async (dateStr) => {
+  const response = await fetch(`${API_BASE_URL}/wellness/today?date=${dateStr}`, {
+    headers: getHeaders(true),
+  });
+  return handleResponse(response);
+};
+
+const getWellnessGoals = async () => {
+  const response = await fetch(`${API_BASE_URL}/wellness/goals`, {
+    headers: getHeaders(true),
+  });
+  return handleResponse(response);
+};
+
+const updateWellnessGoals = async (data) => {
+  const response = await fetch(`${API_BASE_URL}/wellness/goals`, {
+    method: 'PUT',
+    headers: getHeaders(true),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(response);
+};
+
+const addWaterEntry = async (data) => {
+  const response = await fetch(`${API_BASE_URL}/wellness/water`, {
+    method: 'POST',
+    headers: getHeaders(true),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(response);
+};
+
+const addSleepEntry = async (data) => {
+  const response = await fetch(`${API_BASE_URL}/wellness/sleep`, {
+    method: 'POST',
+    headers: getHeaders(true),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(response);
+};
+
+const addActivityEntry = async (data) => {
+  const response = await fetch(`${API_BASE_URL}/wellness/activity`, {
+    method: 'POST',
+    headers: getHeaders(true),
+    body: JSON.stringify(data),
+  });
+  return handleResponse(response);
+};
+
+
 export default {
   setAuthToken,
   getAuthToken,
@@ -164,5 +233,13 @@ export default {
   getExamination,
   deleteExamination,
   getReportData,
+  getHealthProfile,
+  updateHealthProfile,
+  getWellnessToday,
+  getWellnessGoals,
+  updateWellnessGoals,
+  addWaterEntry,
+  addSleepEntry,
+  addActivityEntry,
   API_BASE_URL,
 };

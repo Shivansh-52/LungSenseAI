@@ -9,6 +9,8 @@ from app.ml.model import load_model, is_model_loaded
 from app.api.auth import router as auth_router
 from app.api.predictions import router as predictions_router
 from app.api.examinations import router as examinations_router
+from app.api.wellness import router as wellness_router
+from app.api.health_profiles import router as health_profiles_router
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -59,6 +61,8 @@ async def shutdown_event():
 app.include_router(auth_router)
 app.include_router(predictions_router)
 app.include_router(examinations_router)
+app.include_router(wellness_router)
+app.include_router(health_profiles_router)
 
 
 # ── Health Endpoint ───────────────────────────────────────────────────────────

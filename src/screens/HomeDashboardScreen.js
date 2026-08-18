@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, RefreshControl } from 'react-native';
 import { Colors } from '../constants/colors';
 import Card from '../components/Card';
-import WellnessScore from '../components/WellnessScore';
 import ProgressBar from '../components/ProgressBar';
 import SectionHeader from '../components/SectionHeader';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { MOCK_ACTIVITY_DATA, MOCK_INSIGHTS } from '../data/healthData';
-import { calculateWellnessScore } from '../utils/healthCalculations';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
+import { useFocusEffect } from '@react-navigation/native';
 
 const QuickAction = ({ icon, title, onPress, color }) => (
   <TouchableOpacity style={styles.quickAction} onPress={onPress}>
@@ -21,12 +20,37 @@ const QuickAction = ({ icon, title, onPress, color }) => (
 
 const HomeDashboardScreen = ({ navigation }) => {
   const { user, isAuthenticated } = useAuth();
-  const [wellnessScore, setWellnessScore] = useState(0);
+  const [wellnessData, setWellnessData] = useState(null);
+  const [latestExam, setLatestExam] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    const score = calculateWellnessScore(MOCK_ACTIVITY_DATA);
-    setWellnessScore(score);
-  }, []);
+  const loadDashboardData = async () => {
+    if (!isAuthenticated) return;
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const data = await api.getWellnessToday(today);
+      setWellnessData(data);
+      
+      const exams = await api.getExaminations(1, 1);
+      if (exams && exams.examinations && exams.examinations.length > 0) {
+        setLatestExam(exams.examinations[0]);
+      }
+    } catch (err) {
+      console.log('Error loading dashboard', err);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadDashboardData();
+    }, [isAuthenticated])
+  );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadDashboardData();
+    setRefreshing(false);
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -35,13 +59,41 @@ const HomeDashboardScreen = ({ navigation }) => {
     return 'Good Evening';
   };
 
+  const score = wellnessData ? wellnessData.score : 0;
+  const scoreLabel = wellnessData ? wellnessData.score_label : 'Needs Attention';
+
+  const renderHealthTimeline = () => {
+    if (!wellnessData) return (
+      <View style={styles.emptyState}>
+        <Text style={styles.emptyStateText}>Log your wellness activities to see your timeline.</Text>
+      </View>
+    );
+    return (
+      <View style={styles.timelineContainer}>
+        <Text style={styles.timelineDate}>Today</Text>
+        {wellnessData.total_steps > 0 && <Text style={styles.timelineItem}>• {wellnessData.total_steps.toLocaleString()} steps</Text>}
+        {wellnessData.total_water_ml > 0 && <Text style={styles.timelineItem}>• {wellnessData.total_water_ml} ml water</Text>}
+        {wellnessData.total_sleep_minutes > 0 && <Text style={styles.timelineItem}>• {Math.floor(wellnessData.total_sleep_minutes/60)}h {wellnessData.total_sleep_minutes%60}m sleep</Text>}
+        {wellnessData.total_activity_minutes > 0 && <Text style={styles.timelineItem}>• {wellnessData.total_activity_minutes} min activity</Text>}
+        
+        {wellnessData.total_water_ml === 0 && wellnessData.total_sleep_minutes === 0 && wellnessData.total_activity_minutes === 0 && (
+          <Text style={styles.timelineItem}>No wellness data logged today.</Text>
+        )}
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         
         <View style={styles.header}>
           <Text style={styles.greeting}>
-            {getGreeting()} {isAuthenticated && user ? `, ${user.full_name?.split(' ')[0]}` : ''} 👋
+            {getGreeting()}{isAuthenticated && user ? `, ${user.full_name?.split(' ')[0]}` : ''}
           </Text>
           <Text style={styles.appName}>LungSense AI</Text>
         </View>
@@ -54,98 +106,69 @@ const HomeDashboardScreen = ({ navigation }) => {
               <Icon name="person-circle-outline" size={28} color={Colors.primary} />
               <View style={styles.authBannerText}>
                 <Text style={styles.authBannerTitle}>Unlock Full Dashboard</Text>
-                <Text style={styles.authBannerSubtitle}>Sign in to track your health & save examinations</Text>
+                <Text style={styles.authBannerSubtitle}>Sign in to track wellness & save progress</Text>
               </View>
               <Icon name="chevron-forward" size={20} color={Colors.primary} />
             </View>
           </TouchableOpacity>
         )}
 
-        <Text style={styles.sectionTitle}>Your Wellness Today</Text>
+        <Text style={styles.sectionTitle}>Wellness Progress</Text>
         <Card style={styles.wellnessCard}>
-          <WellnessScore score={wellnessScore} />
+          <View style={{alignItems: 'center', marginVertical: 16}}>
+            <Text style={{fontSize: 48, fontWeight: 'bold', color: Colors.primary}}>{score}</Text>
+            <Text style={{fontSize: 16, color: Colors.textSecondary}}>{scoreLabel}</Text>
+          </View>
+          <View style={{marginTop: 8}}>
+            <ProgressBar progress={score / 100} color={Colors.primary} />
+          </View>
         </Card>
 
         <SectionHeader title="Quick Actions" />
         <View style={styles.quickActionsGrid}>
-          <QuickAction 
-            icon="medical" 
-            title="Lung Check" 
-            color={Colors.primary} 
-            onPress={() => navigation.navigate('LungTab')} 
-          />
-          <QuickAction 
-            icon="water" 
-            title="Add Water" 
-            color="#40A9FF" 
-            onPress={() => navigation.navigate('HealthTab')} 
-          />
-          <QuickAction 
-            icon="body" 
-            title="BMI" 
-            color={Colors.accent} 
-            onPress={() => navigation.navigate('HealthTab')} 
-          />
-          <QuickAction 
-            icon="search" 
-            title="Find Doc" 
-            color="#FFA940" 
-            onPress={() => navigation.navigate('DoctorsTab')} 
-          />
+          <QuickAction icon="medical" title="Exam" color={Colors.primary} onPress={() => navigation.navigate('LungTab', { screen: 'Recording' })} />
+          <QuickAction icon="time" title="History" color={Colors.secondary} onPress={() => navigation.navigate('LungTab', { screen: 'History' })} />
+          <QuickAction icon="body" title="BMI" color={Colors.accent} onPress={() => navigation.navigate('BMI')} />
+          <QuickAction icon="walk" title="Steps" color="#FA8C16" onPress={() => navigation.navigate('Steps')} />
+        </View>
+        <View style={styles.quickActionsGrid}>
+          <QuickAction icon="water" title="Water" color="#40A9FF" onPress={() => navigation.navigate('Hydration')} />
+          <QuickAction icon="moon" title="Sleep" color="#722ED1" onPress={() => navigation.navigate('Sleep')} />
+          <QuickAction icon="fitness" title="Activity" color="#52C41A" onPress={() => navigation.navigate('Activity')} />
+          <QuickAction icon="calendar" title="Routine" color="#EB2F96" onPress={() => navigation.navigate('Routine')} />
         </View>
 
-        <SectionHeader title="Lung Health" actionTitle="History" onActionPress={() => navigation.navigate('LungTab', { screen: 'History' })} />
+        <SectionHeader title="Respiratory Health" />
         <Card>
           <View style={styles.lungCardHeader}>
             <Icon name="pulse" size={24} color={Colors.primary} />
-            <Text style={styles.lungCardTitle}>Analyze your respiratory sound</Text>
+            <Text style={styles.lungCardTitle}>Latest Examination</Text>
           </View>
-          <View style={styles.lungLastResult}>
-            <Text style={styles.lungResultLabel}>Last Analysis (Today):</Text>
-            <Text style={styles.lungResultText}>No abnormal pattern detected</Text>
-          </View>
-          <TouchableOpacity 
-            style={styles.primaryButton}
-            onPress={() => navigation.navigate('LungTab', { screen: 'Recording' })}
-          >
-            <Text style={styles.primaryButtonText}>Record Lung Sound</Text>
-          </TouchableOpacity>
+          {latestExam ? (
+            <View style={styles.lungLastResult}>
+              <Text style={styles.lungResultLabel}>Respiratory sound classification:</Text>
+              <Text style={styles.lungResultText}>{latestExam.prediction}</Text>
+              <Text style={{fontSize: 12, color: Colors.textSecondary, marginTop: 4}}>
+                Confidence: {Math.round(latestExam.confidence * 100)}% • {new Date(latestExam.created_at).toLocaleDateString()}
+              </Text>
+              <TouchableOpacity 
+                style={[styles.primaryButton, {marginTop: 16}]}
+                onPress={() => navigation.navigate('LungTab', { screen: 'ExaminationDetail', params: { examinationId: latestExam.id } })}
+              >
+                <Text style={styles.primaryButtonText}>View Details</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyStateText}>Your first respiratory examination will appear here.</Text>
+            </View>
+          )}
         </Card>
 
-        <SectionHeader title="Daily Health Dashboard" actionTitle="See All" onActionPress={() => navigation.navigate('HealthTab')} />
-        <View style={styles.metricsGrid}>
-          <Card style={styles.metricCard}>
-            <View style={styles.metricHeader}>
-              <Icon name="walk" size={20} color={Colors.accent} />
-              <Text style={styles.metricTitle}>Steps</Text>
-            </View>
-            <Text style={styles.metricValue}>{MOCK_ACTIVITY_DATA.steps}</Text>
-            <Text style={styles.metricSub}>/ {MOCK_ACTIVITY_DATA.stepsGoal}</Text>
-            <View style={{marginTop: 8}}>
-              <ProgressBar progress={MOCK_ACTIVITY_DATA.steps / MOCK_ACTIVITY_DATA.stepsGoal} color={Colors.accent} />
-            </View>
-          </Card>
-          
-          <Card style={styles.metricCard}>
-            <View style={styles.metricHeader}>
-              <Icon name="water" size={20} color="#40A9FF" />
-              <Text style={styles.metricTitle}>Water</Text>
-            </View>
-            <Text style={styles.metricValue}>{MOCK_ACTIVITY_DATA.water}L</Text>
-            <Text style={styles.metricSub}>/ {MOCK_ACTIVITY_DATA.waterGoal}L</Text>
-            <View style={{marginTop: 8}}>
-              <ProgressBar progress={MOCK_ACTIVITY_DATA.water / MOCK_ACTIVITY_DATA.waterGoal} color="#40A9FF" />
-            </View>
-          </Card>
-        </View>
-
-        <SectionHeader title="Your Insights" />
-        {MOCK_INSIGHTS.map((insight, index) => (
-          <Card key={index} style={styles.insightCard}>
-            <Icon name="bulb-outline" size={20} color="#FAAD14" style={{marginRight: 12}} />
-            <Text style={styles.insightText}>{insight}</Text>
-          </Card>
-        ))}
+        <SectionHeader title="Wellness Timeline" />
+        <Card style={styles.timelineCard}>
+          {renderHealthTimeline()}
+        </Card>
 
         <View style={{height: 40}} />
       </ScrollView>
@@ -154,162 +177,36 @@ const HomeDashboardScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-  },
-  header: {
-    marginBottom: 24,
-    marginTop: 8,
-  },
-  greeting: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-  },
-  appName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: Colors.primary,
-  },
-  authBanner: {
-    backgroundColor: Colors.primaryLight,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.primary + '30',
-  },
-  authBannerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  authBannerText: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  authBannerTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.primary,
-  },
-  authBannerSubtitle: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    marginTop: 2,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
-    marginBottom: 12,
-  },
-  wellnessCard: {
-    marginBottom: 8,
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  quickAction: {
-    alignItems: 'center',
-    width: '22%',
-  },
-  quickActionIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  quickActionText: {
-    fontSize: 12,
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  lungCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  lungCardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
-    marginLeft: 8,
-  },
-  lungLastResult: {
-    backgroundColor: Colors.background,
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  lungResultLabel: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  lungResultText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
-    marginTop: 4,
-  },
-  primaryButton: {
-    backgroundColor: Colors.primary,
-    borderRadius: 8,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  metricsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  metricCard: {
-    width: '48%',
-  },
-  metricHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  metricTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: Colors.textSecondary,
-    marginLeft: 6,
-  },
-  metricValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.textPrimary,
-  },
-  metricSub: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  insightCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  insightText: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.textPrimary,
-    lineHeight: 20,
-  }
+  safeArea: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
+  content: { padding: 16 },
+  header: { marginBottom: 24, marginTop: 8 },
+  greeting: { fontSize: 16, color: Colors.textSecondary },
+  appName: { fontSize: 28, fontWeight: 'bold', color: Colors.primary },
+  authBanner: { backgroundColor: Colors.primaryLight, borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: Colors.primary + '30' },
+  authBannerContent: { flexDirection: 'row', alignItems: 'center' },
+  authBannerText: { flex: 1, marginLeft: 12 },
+  authBannerTitle: { fontSize: 15, fontWeight: '700', color: Colors.primary },
+  authBannerSubtitle: { fontSize: 12, color: Colors.textSecondary, marginTop: 2 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: Colors.textPrimary, marginBottom: 12 },
+  wellnessCard: { marginBottom: 8 },
+  quickActionsGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+  quickAction: { alignItems: 'center', width: '22%' },
+  quickActionIcon: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  quickActionText: { fontSize: 12, color: Colors.textPrimary, textAlign: 'center' },
+  lungCardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  lungCardTitle: { fontSize: 16, fontWeight: 'bold', color: Colors.textPrimary, marginLeft: 8 },
+  lungLastResult: { backgroundColor: Colors.background, padding: 12, borderRadius: 8, marginBottom: 8 },
+  lungResultLabel: { fontSize: 14, color: Colors.textSecondary },
+  lungResultText: { fontSize: 18, fontWeight: 'bold', color: Colors.textPrimary, marginTop: 4 },
+  primaryButton: { backgroundColor: Colors.primary, borderRadius: 8, paddingVertical: 14, alignItems: 'center' },
+  primaryButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  timelineCard: { padding: 16 },
+  timelineContainer: {},
+  timelineDate: { fontSize: 16, fontWeight: 'bold', color: Colors.textPrimary, marginBottom: 8 },
+  timelineItem: { fontSize: 14, color: Colors.textSecondary, marginBottom: 4, paddingLeft: 8 },
+  emptyState: { padding: 16, alignItems: 'center' },
+  emptyStateText: { fontSize: 14, color: Colors.textSecondary, fontStyle: 'italic', textAlign: 'center' }
 });
 
 export default HomeDashboardScreen;
