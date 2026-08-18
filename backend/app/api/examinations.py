@@ -101,9 +101,12 @@ async def get_examination_details(
     if db is None:
         raise HTTPException(status_code=503, detail="Database not available")
 
-    doc = await db.examinations.find_one({"_id": ObjectId(examination_id)})
+    doc = await db.examinations.find_one({
+        "_id": ObjectId(examination_id),
+        "user_id": current_user["_id"]
+    })
     
-    if doc is None or doc.get("user_id") != current_user["_id"]:
+    if doc is None:
         raise HTTPException(status_code=404, detail="Examination not found")
 
     exam_serialized = serialize_examination(doc)
@@ -156,8 +159,11 @@ async def get_examination_report_data(
     if db is None:
         raise HTTPException(status_code=503, detail="Database not available")
 
-    doc = await db.examinations.find_one({"_id": ObjectId(examination_id)})
-    if doc is None or doc.get("user_id") != current_user["_id"]:
+    doc = await db.examinations.find_one({
+        "_id": ObjectId(examination_id),
+        "user_id": current_user["_id"]
+    })
+    if doc is None:
         raise HTTPException(status_code=404, detail="Examination not found")
 
     prediction = doc.get("prediction", {})
@@ -187,8 +193,11 @@ async def get_examination_report_pdf(
     if db is None:
         raise HTTPException(status_code=503, detail="Database not available")
 
-    doc = await db.examinations.find_one({"_id": ObjectId(examination_id)})
-    if doc is None or doc.get("user_id") != current_user["_id"]:
+    doc = await db.examinations.find_one({
+        "_id": ObjectId(examination_id),
+        "user_id": current_user["_id"]
+    })
+    if doc is None:
         raise HTTPException(status_code=404, detail="Examination not found")
 
     try:

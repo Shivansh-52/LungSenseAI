@@ -1,20 +1,22 @@
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, Request
 from app.schemas.auth import RegisterRequest, LoginRequest
 from app.services.auth_service import register_user, authenticate_user
 from app.utils.dependencies import get_current_user
 from app.models.user import serialize_user
+from app.utils.rate_limit import check_rate_limit
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/register")
-async def register(request: RegisterRequest):
+async def register(request: Request, body: RegisterRequest):
     """Register a new user account."""
+    check_rate_limit(request, max_requests=10, window_seconds=60)
     try:
         result = await register_user(
-            name=request.name,
-            email=request.email,
-            password=request.password,
+            name=body.name,
+            email=body.email,
+            password=body.password,
         )
         return {"success": True, "message": "Account created successfully"}
     except ValueError as e:
@@ -24,12 +26,13 @@ async def register(request: RegisterRequest):
 
 
 @router.post("/login")
-async def login(request: LoginRequest):
+async def login(request: Request, body: LoginRequest):
     """Authenticate user and return JWT token."""
+    check_rate_limit(request, max_requests=20, window_seconds=60)
     try:
         result = await authenticate_user(
-            email=request.email,
-            password=request.password,
+            email=body.email,
+            password=body.password,
         )
         result["success"] = True
         return result
