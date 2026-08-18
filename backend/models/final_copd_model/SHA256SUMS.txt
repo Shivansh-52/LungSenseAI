@@ -1,0 +1,1 @@
+8b02089bba87216ced5131c989fc2e14cd4b87651669eaf37d9bfc5287184a6a  disease_copd_best.pth

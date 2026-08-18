@@ -5,6 +5,8 @@ from app.utils.dependencies import get_current_user
 from app.db.mongodb import get_database
 from app.models.examination import serialize_examination
 from app.reports.pdf_report import generate_examination_pdf
+from typing import Optional, Dict, Any
+from pydantic import BaseModel
 from app.reports.wellness import (
     get_class_interpretation,
     get_general_wellness_guidance,
@@ -12,8 +14,47 @@ from app.reports.wellness import (
     get_professional_guidance,
     get_disclaimer,
 )
+from datetime import datetime
+
+class ExaminationPayload(BaseModel):
+    sound_prediction: Dict[str, Any]
+    disease_prediction: Optional[Dict[str, Any]] = None
+    audio_metadata: Optional[Dict[str, Any]] = None
+
 
 router = APIRouter(prefix="/examinations", tags=["Examinations"])
+
+@router.post("")
+async def create_examination(
+    payload: ExaminationPayload,
+    current_user: dict = Depends(get_current_user)
+):
+    """Save a unified examination containing sound and optional disease predictions."""
+    db = get_database()
+    if db is None:
+        raise HTTPException(status_code=503, detail="Database not available")
+
+    now = datetime.utcnow()
+    exam_doc = {
+        "user_id": current_user["_id"],
+        "prediction": payload.sound_prediction.get("prediction", {}),
+        "probabilities": payload.sound_prediction.get("probabilities", {}),
+        "model": payload.sound_prediction.get("model", {"name": "CNN + BiLSTM", "version": "1.0"}),
+        "disease_prediction": payload.disease_prediction,
+        "audio_metadata": payload.audio_metadata,
+        "source": "authenticated",
+        "created_at": now
+    }
+    
+    res = await db.examinations.insert_one(exam_doc)
+    
+    return {
+        "success": True,
+        "examination": {
+            "saved": True,
+            "id": str(res.inserted_id)
+        }
+    }
 
 @router.get("")
 async def get_examinations(

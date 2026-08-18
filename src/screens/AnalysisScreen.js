@@ -26,22 +26,32 @@ const AnalysisScreen = () => {
       try {
         setLoadingText('Uploading audio for analysis...');
         
-        // Let the loading text show for a moment
         await new Promise(res => setTimeout(res, 500));
         
-        const response = await api.predictAudio(audioPath);
+        // Fire both predictions concurrently. We pass saveExam=false so the backend doesn't save a partial exam.
+        const [soundResult, diseaseResult] = await Promise.allSettled([
+          api.predictAudio(audioPath, false),
+          api.predictDiseaseAudio(audioPath)
+        ]);
         
-        if (response.success) {
-          setLoadingText('Finalizing results...');
-          await new Promise(res => setTimeout(res, 500));
-          navigation.replace('Result', { predictionResult: response });
-        } else {
-          throw new Error('Prediction failed');
+        setLoadingText('Processing disease pattern analysis...');
+        await new Promise(res => setTimeout(res, 500));
+        
+        // Require sound analysis to succeed at minimum
+        if (soundResult.status === 'rejected' || !soundResult.value.success) {
+          throw new Error(soundResult.reason?.message || 'Sound analysis failed');
         }
+        
+        setLoadingText('Finalizing results...');
+        await new Promise(res => setTimeout(res, 500));
+        
+        navigation.replace('Result', { 
+          soundResult: soundResult.value,
+          diseaseResult: diseaseResult.status === 'fulfilled' ? diseaseResult.value : { status: 'error', message: diseaseResult.reason?.message || 'Failed' }
+        });
       } catch (err) {
         setLoadingText('Analysis failed.');
         console.warn('API Error:', err);
-        // Navigate to result with error or show alert
         navigation.replace('Result', { error: err.message || 'Analysis failed. Please check your connection and try again.' });
       }
     };

@@ -9,24 +9,26 @@ import api from '../services/api';
 const ResultScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { predictionResult, error } = route.params || {};
+  const { soundResult, diseaseResult, error } = route.params || {};
   const { isAuthenticated } = useAuth();
   
   const [saveStatus, setSaveStatus] = useState('');
 
-  const prediction = predictionResult?.prediction;
-  const probabilities = predictionResult?.probabilities;
+  const soundPrediction = soundResult?.prediction;
+  const probabilities = soundResult?.probabilities;
 
   useEffect(() => {
     // Automatically save if authenticated and successful
     const saveExam = async () => {
-      if (isAuthenticated && predictionResult?.success) {
+      if (isAuthenticated && soundResult?.success) {
         try {
-          await api.saveExamination({
-            predicted_class: prediction.class_name,
-            confidence: prediction.confidence,
-            probabilities: probabilities,
-          });
+          const payload = {
+            sound_prediction: soundResult,
+          };
+          if (diseaseResult && diseaseResult.status === 'success') {
+            payload.disease_prediction = diseaseResult;
+          }
+          await api.saveExamination(payload);
           setSaveStatus('Examination saved to history.');
         } catch (err) {
           console.warn('Could not save examination:', err);
@@ -35,7 +37,7 @@ const ResultScreen = () => {
       }
     };
     saveExam();
-  }, [isAuthenticated, predictionResult]);
+  }, [isAuthenticated, soundResult, diseaseResult]);
 
   const handleRecordAgain = () => {
     navigation.reset({
@@ -44,7 +46,7 @@ const ResultScreen = () => {
     });
   };
 
-  const isNormal = prediction?.class_name?.toLowerCase().includes('normal');
+  const isNormal = soundPrediction?.class_name?.toLowerCase().includes('normal');
   const statusColor = isNormal ? Colors.success : Colors.warning;
 
   if (error) {
@@ -65,35 +67,79 @@ const ResultScreen = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Respiratory sound classification</Text>
+          <Text style={styles.headerTitle}>Examination Results</Text>
         </View>
 
-        <View style={[styles.card, { borderColor: statusColor }]}>
-          <View style={styles.resultRow}>
-            <Text style={styles.labelTitle}>Predicted Class:</Text>
-            <Text style={[styles.label, { color: statusColor }]}>{prediction?.class_name || 'Unknown'}</Text>
+        {/* SOUND RESULT CARD */}
+        <View style={[styles.card, { borderColor: statusColor, marginBottom: 16 }]}>
+          <View style={styles.cardHeader}>
+            <Icon name="stethoscope" size={24} color={Colors.primary} />
+            <Text style={styles.cardTitle}>RESPIRATORY SOUND ANALYSIS</Text>
           </View>
           <View style={styles.resultRow}>
-            <Text style={styles.labelTitle}>Confidence:</Text>
-            <Text style={styles.confidence}>{Math.round((prediction?.confidence || 0) * 100)}%</Text>
+            <Text style={styles.labelTitle}>Detected pattern:</Text>
+            <Text style={[styles.label, { color: statusColor }]}>{soundPrediction?.class_name || 'Unknown'}</Text>
           </View>
 
-          <View style={styles.divider} />
-          
-          <Text style={styles.probTitle}>Probability distribution:</Text>
-          {probabilities && Object.entries(probabilities).map(([className, prob]) => (
-            <View key={className} style={styles.probRow}>
-              <Text style={styles.probLabel}>{className}</Text>
-              <View style={styles.probBarContainer}>
-                <View style={[styles.probBar, { width: `${prob * 100}%`, backgroundColor: className === prediction?.class_name ? statusColor : Colors.border }]} />
+          {isAuthenticated ? (
+            <>
+              <View style={styles.resultRow}>
+                <Text style={styles.labelTitle}>Confidence:</Text>
+                <Text style={styles.confidence}>{Math.round((soundPrediction?.confidence || 0) * 100)}%</Text>
               </View>
-              <Text style={styles.probValue}>{Math.round(prob * 100)}%</Text>
-            </View>
-          ))}
 
-          <View style={styles.divider} />
-          <Text style={styles.modelInfo}>Model: CNN + BiLSTM</Text>
-          <Text style={styles.aiAssist}>AI-assisted respiratory sound classification</Text>
+              <View style={styles.divider} />
+              <Text style={styles.probTitle}>Probability distribution:</Text>
+              {probabilities && Object.entries(probabilities).map(([className, prob]) => (
+                <View key={className} style={styles.probRow}>
+                  <Text style={styles.probLabel}>{className}</Text>
+                  <View style={styles.probBarContainer}>
+                    <View style={[styles.probBar, { width: `${prob * 100}%`, backgroundColor: className === soundPrediction?.class_name ? statusColor : Colors.border }]} />
+                  </View>
+                  <Text style={styles.probValue}>{Math.round(prob * 100)}%</Text>
+                </View>
+              ))}
+            </>
+          ) : null}
+          <Text style={styles.modelInfo}>Model: {soundResult?.model?.name || 'CNN + BiLSTM'}</Text>
+        </View>
+
+        {/* DISEASE RESULT CARD */}
+        <View style={[styles.card, { borderColor: Colors.accent }]}>
+          <View style={styles.cardHeader}>
+            <Icon name="lungs" size={24} color={Colors.accent} />
+            <Text style={styles.cardTitle}>DISEASE PATTERN ANALYSIS</Text>
+          </View>
+
+          {diseaseResult?.status === 'success' ? (
+            <>
+              <View style={[styles.resultRow, { flexDirection: 'column', alignItems: 'flex-start' }]}>
+                <Text style={[styles.labelTitle, { marginBottom: 8 }]}>Result:</Text>
+                <Text style={[styles.label, { color: Colors.textPrimary, fontSize: 18 }]}>
+                  {diseaseResult.prediction}
+                </Text>
+              </View>
+              
+              {isAuthenticated ? (
+                <>
+                  <View style={styles.divider} />
+                  <View style={styles.resultRow}>
+                    <Text style={styles.labelTitle}>COPD-associated probability:</Text>
+                    <Text style={styles.confidence}>{Math.round((diseaseResult.copd_probability || 0) * 100)}%</Text>
+                  </View>
+                  <View style={styles.resultRow}>
+                    <Text style={styles.labelTitle}>Threshold:</Text>
+                    <Text style={[styles.confidence, { color: Colors.textSecondary }]}>{Math.round((diseaseResult.threshold || 0) * 100)}%</Text>
+                  </View>
+                  <Text style={styles.modelInfo}>Model Version: {diseaseResult.model_version}</Text>
+                </>
+              ) : null}
+            </>
+          ) : (
+            <Text style={{ color: Colors.textSecondary, fontStyle: 'italic', marginTop: 8 }}>
+              Disease analysis is unavailable. {diseaseResult?.message || ''}
+            </Text>
+          )}
         </View>
 
         {saveStatus ? <Text style={styles.saveStatus}>{saveStatus}</Text> : null}
@@ -101,7 +147,7 @@ const ResultScreen = () => {
         <View style={styles.buttonsContainer}>
           {!isAuthenticated && (
             <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginButtonText}>Login to View Full Details</Text>
+              <Text style={styles.loginButtonText}>Login to view full report & save history</Text>
             </TouchableOpacity>
           )}
 
@@ -118,7 +164,7 @@ const ResultScreen = () => {
 
         <View style={styles.footer}>
           <Text style={styles.disclaimer}>
-            This result is not a medical diagnosis and should not replace evaluation by a qualified healthcare professional.
+            This AI-generated result is a research prediction based on respiratory audio. It is not a medical diagnosis and has not been clinically validated. Please consult a qualified healthcare professional for diagnosis and treatment.
           </Text>
         </View>
       </ScrollView>
@@ -138,6 +184,8 @@ const styles = StyleSheet.create({
     width: '100%', borderTopWidth: 4, elevation: 6, shadowColor: '#000',
     shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
   },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: Colors.textSecondary, marginLeft: 8, letterSpacing: 0.5 },
   resultRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12, alignItems: 'center' },
   labelTitle: { fontSize: 16, color: Colors.textSecondary, fontWeight: '500' },
   label: { fontSize: 20, fontWeight: '800' },
@@ -150,7 +198,6 @@ const styles = StyleSheet.create({
   probBar: { height: '100%', borderRadius: 4 },
   probValue: { width: 35, fontSize: 12, color: Colors.textPrimary, textAlign: 'right' },
   modelInfo: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500', textAlign: 'center', marginTop: 8 },
-  aiAssist: { fontSize: 12, color: Colors.textSecondary, textAlign: 'center', marginTop: 4, fontStyle: 'italic' },
   buttonsContainer: { width: '100%', marginTop: 32 },
   primaryButton: { backgroundColor: Colors.primary, paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 12 },
   primaryButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },

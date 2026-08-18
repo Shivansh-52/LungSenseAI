@@ -89,7 +89,7 @@ const getMe = async () => {
 
 // ── Prediction & Examination endpoints ───────────────────────────────────────
 
-const predictAudio = async (audioFilePath) => {
+const predictAudio = async (audioFilePath, saveExam = true) => {
   const formData = new FormData();
   const filename = audioFilePath.split('/').pop() || 'recording.mp4';
   const ext = filename.split('.').pop();
@@ -103,7 +103,7 @@ const predictAudio = async (audioFilePath) => {
   formData.append('audio', file);
 
   try {
-    const response = await fetch(`${API_BASE_URL}/predict`, {
+    const response = await fetch(`${API_BASE_URL}/predict?save_exam=${saveExam ? 'true' : 'false'}`, {
       method: 'POST',
       body: formData,
       headers: {
@@ -119,6 +119,45 @@ const predictAudio = async (audioFilePath) => {
     }
     throw err;
   }
+};
+
+const predictDiseaseAudio = async (audioFilePath) => {
+  const formData = new FormData();
+  const filename = audioFilePath.split('/').pop() || 'recording.mp4';
+  const ext = filename.split('.').pop();
+  
+  const file = {
+    uri: Platform.OS === 'android' ? `file://${audioFilePath}` : audioFilePath,
+    name: filename,
+    type: `audio/${ext === 'mp4' ? 'mp4' : 'wav'}`,
+  };
+  formData.append('audio', file);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/predict/disease`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        Accept: 'application/json',
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+      },
+    });
+    return handleResponse(response);
+  } catch (err) {
+    if (!err.status) {
+      throw new Error('Unable to connect to LungSenseAI. Please check your internet connection and try again.');
+    }
+    throw err;
+  }
+};
+
+const saveExamination = async (payload) => {
+  const response = await fetch(`${API_BASE_URL}/examinations`, {
+    method: 'POST',
+    headers: getHeaders(true),
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(response);
 };
 
 const getExaminations = async (page = 1, pageSize = 20) => {
@@ -229,6 +268,8 @@ export default {
   login,
   getMe,
   predictAudio,
+  predictDiseaseAudio,
+  saveExamination,
   getExaminations,
   getExamination,
   deleteExamination,

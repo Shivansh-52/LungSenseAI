@@ -61,6 +61,11 @@ const HistoryScreen = () => {
           </View>
           <View style={styles.cardBody}>
             <Text style={[styles.label, { color: statusColor }]}>{label}</Text>
+            {item.disease_prediction && item.disease_prediction.status === 'success' && (
+              <Text style={{ fontSize: 13, color: Colors.textSecondary, marginTop: 4 }}>
+                <Icon name="lungs" size={14} color={Colors.accent} /> {item.disease_prediction.prediction}
+              </Text>
+            )}
           </View>
           {isAuthenticated && item.id && (
             <View style={styles.cardFooter}>

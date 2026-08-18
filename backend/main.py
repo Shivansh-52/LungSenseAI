@@ -9,6 +9,7 @@ from app.ml.model import load_model, is_model_loaded
 from app.api.auth import router as auth_router
 from app.api.predictions import router as predictions_router
 from app.api.examinations import router as examinations_router
+from app.ml.disease_model import load_disease_model, is_disease_model_loaded
 from app.api.wellness import router as wellness_router
 from app.api.health_profiles import router as health_profiles_router
 
@@ -49,6 +50,7 @@ app.add_middleware(
 async def startup_event():
     await connect_to_mongo()
     load_model()
+    load_disease_model()
 
 
 @app.on_event("shutdown")
@@ -82,5 +84,6 @@ async def health_check():
     return {
         "status": "healthy",
         "model_loaded": is_model_loaded(),
+        "disease_model_loaded": is_disease_model_loaded(),
         "database_connected": db_status
     }

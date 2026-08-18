@@ -1,0 +1,7 @@
+{
+    "aggregation_method": "Mean",
+    "threshold": 0.7,
+    "selection_metric": "Macro F1 + Balanced Accuracy - abs(Recall - Spec)",
+    "validation_score": 1.7618,
+    "model_version": "LungSenseAI-COPD-v1.0"
+}

@@ -58,8 +58,12 @@ def generate_examination_pdf(examination: dict, user: dict) -> bytes:
         ["Report ID:", exam_id],
         ["Date and Time:", date_str],
         ["Model:", model_name],
-        ["Model Version:", model_version],
+        ["Sound Model Version:", model_version],
     ]
+    disease_pred = examination.get("disease_prediction")
+    if disease_pred:
+        disease_model_ver = disease_pred.get("model_version", "LungSenseAI-COPD-v1.0")
+        header_data.append(["Disease Model Version:", disease_model_ver])
     header_table = Table(header_data, colWidths=[120, 300])
     header_table.setStyle(TableStyle([
         ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
@@ -91,6 +95,15 @@ def generate_examination_pdf(examination: dict, user: dict) -> bytes:
     elements.append(Paragraph(f"<b>Predicted respiratory sound:</b> {predicted_class}", normal_style))
     elements.append(Paragraph(f"<b>Confidence:</b> {confidence:.1f}%", normal_style))
     elements.append(Spacer(1, 10))
+
+    if disease_pred:
+        elements.append(Paragraph("Disease Pattern Analysis", h2_style))
+        disease_pattern = disease_pred.get("prediction", "Unknown")
+        copd_prob = disease_pred.get("copd_probability", 0.0) * 100
+        threshold = disease_pred.get("threshold", 0.70) * 100
+        elements.append(Paragraph(f"<b>Disease pattern:</b> {disease_pattern}", normal_style))
+        elements.append(Paragraph(f"<b>Model COPD-associated probability:</b> {copd_prob:.1f}% (Threshold: {threshold:.1f}%)", normal_style))
+        elements.append(Spacer(1, 10))
 
     # --- E. CONFIDENCE INFORMATION (Probability Table) ---
     elements.append(Paragraph("Model confidence reflects the model's prediction probability and should not be interpreted as medical certainty.", disclaimer_style))

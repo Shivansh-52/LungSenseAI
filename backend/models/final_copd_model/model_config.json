@@ -1,0 +1,26 @@
+{
+    "architecture": "CNN_BiLSTM",
+    "checkpoint": "disease_copd_best.pth",
+    "input_shape": [
+        1,
+        64,
+        461
+    ],
+    "sample_rate": 16000,
+    "duration": 4.6,
+    "n_mels": 64,
+    "n_fft": 400,
+    "hop_length": 160,
+    "win_length": 400,
+    "f_min": 50,
+    "f_max": 4000,
+    "normalization": "peak",
+    "class_mapping": {
+        "0": "Non-COPD",
+        "1": "COPD"
+    },
+    "aggregation_method": "Mean",
+    "threshold": 0.7,
+    "training_seed": 42,
+    "best_epoch": 3
+}

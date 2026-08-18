@@ -29,6 +29,8 @@ def serialize_examination(exam: dict) -> dict:
         "prediction": exam.get("prediction", {}),
         "probabilities": exam.get("probabilities", {}),
         "model": exam.get("model", {}),
+        "disease_prediction": exam.get("disease_prediction", None),
+        "audio_metadata": exam.get("audio_metadata", None),
         "source": exam.get("source", ""),
         "created_at": str(exam.get("created_at", ""))
     }

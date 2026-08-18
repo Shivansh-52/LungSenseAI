@@ -6,18 +6,62 @@ from fastapi import APIRouter, UploadFile, File, Depends
 from fastapi.responses import JSONResponse
 
 from app.ml.model import predict_audio
+from app.ml.disease_model import predict_disease
 from app.utils.dependencies import get_optional_user
 from app.db.mongodb import get_database
 from app.config import MAX_UPLOAD_SIZE_MB
 
 router = APIRouter(tags=["Predictions"])
 
+@router.post("/predict/disease")
+async def predict_disease_endpoint(audio: UploadFile = File(...)):
+    """
+    Predict COPD-associated pattern from an audio file using frozen CNN + BiLSTM model.
+    """
+    if not audio:
+        return JSONResponse(status_code=400, content={"success": False, "error": {"code": "MISSING_AUDIO", "message": "No audio file provided."}})
+        
+    audio.file.seek(0, os.SEEK_END)
+    file_size_mb = audio.file.tell() / (1024 * 1024)
+    audio.file.seek(0)
+    
+    if file_size_mb > MAX_UPLOAD_SIZE_MB:
+        return JSONResponse(status_code=413, content={"success": False, "error": {"code": "FILE_TOO_LARGE", "message": f"Audio file exceeds the maximum size of {MAX_UPLOAD_SIZE_MB}MB."}})
+
+    filename = audio.filename.lower()
+    if not (filename.endswith(".wav") or filename.endswith(".mp3") or filename.endswith(".m4a")):
+        return JSONResponse(status_code=400, content={"success": False, "error": {"code": "UNSUPPORTED_FORMAT", "message": "Only .wav, .mp3, and .m4a are supported."}})
+    
+    try:
+        fd, temp_path = tempfile.mkstemp(suffix=os.path.splitext(filename)[1])
+        with os.fdopen(fd, "wb") as temp_file:
+            shutil.copyfileobj(audio.file, temp_file)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"success": False, "error": {"code": "FILE_SAVE_ERROR", "message": "Could not save uploaded audio temporarily."}})
+        
+    try:
+        prediction_result = predict_disease(temp_path)
+    except Exception as e:
+        os.remove(temp_path)
+        return JSONResponse(status_code=500, content={"success": False, "error": {"code": "INFERENCE_ERROR", "message": "Disease model inference failed."}})
+        
+    try:
+        os.remove(temp_path)
+    except Exception:
+        pass
+
+    if prediction_result.get("status") != "success":
+        return JSONResponse(status_code=400, content={"success": False, "error": {"code": "INVALID_AUDIO", "message": prediction_result.get("message", "Invalid audio.")}})
+            
+    return prediction_result
+
+
 @router.post("/predict")
-async def predict(audio: UploadFile = File(...), user: dict = Depends(get_optional_user)):
+async def predict(audio: UploadFile = File(...), save_exam: bool = True, user: dict = Depends(get_optional_user)):
     """
     Predict respiratory sound pattern from an audio file using frozen CNN + BiLSTM model.
     Guest (no token) -> does not save to DB.
-    Authenticated (valid token) -> saves examination to DB.
+    Authenticated (valid token) -> saves examination to DB unless save_exam=false.
     """
     if not audio:
         return JSONResponse(status_code=400, content={"success": False, "error": {"code": "MISSING_AUDIO", "message": "No audio file provided."}})
@@ -57,9 +101,9 @@ async def predict(audio: UploadFile = File(...), user: dict = Depends(get_option
     except Exception:
         pass
 
-    # Save to MongoDB if authenticated
+    # Save to MongoDB if authenticated and save_exam is true
     examination_info = {"saved": False}
-    if user:
+    if user and save_exam:
         db = get_database()
         if db is not None:
             now = datetime.utcnow()

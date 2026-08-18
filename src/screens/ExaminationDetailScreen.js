@@ -104,6 +104,38 @@ const ExaminationDetailScreen = ({ navigation, route }) => {
           </View>
         </Card>
         
+        {examination.disease_prediction && examination.disease_prediction.status === 'success' && (
+          <Card style={[styles.resultCard, { borderColor: Colors.accent }]}>
+            <Text style={styles.sectionLabel}>Disease Pattern Analysis</Text>
+
+            <View style={styles.resultRow}>
+              <Text style={styles.label}>Result</Text>
+              <Text style={[styles.value, { color: Colors.textPrimary, flex: 1, textAlign: 'right', marginLeft: 16 }]}>
+                {examination.disease_prediction.prediction}
+              </Text>
+            </View>
+
+            <View style={styles.resultRow}>
+              <Text style={styles.label}>COPD Probability</Text>
+              <Text style={[styles.value, { color: Colors.primary }]}>
+                {Math.round((examination.disease_prediction.copd_probability || 0) * 100)}%
+              </Text>
+            </View>
+
+            <View style={styles.resultRow}>
+              <Text style={styles.label}>Threshold</Text>
+              <Text style={[styles.value, { color: Colors.textSecondary }]}>
+                {Math.round((examination.disease_prediction.threshold || 0) * 100)}%
+              </Text>
+            </View>
+
+            <View style={styles.resultRow}>
+              <Text style={styles.label}>Model Version</Text>
+              <Text style={[styles.value, { fontSize: 13 }]}>{examination.disease_prediction.model_version}</Text>
+            </View>
+          </Card>
+        )}
+        
         {Object.keys(probabilities).length > 0 && (
           <Card>
             <Text style={styles.sectionLabel}>Probability Distribution</Text>
