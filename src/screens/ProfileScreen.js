@@ -83,7 +83,7 @@ const ProfileScreen = ({ navigation }) => {
           
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => navigation.navigate('Reports')}>
+            onPress={() => navigation.navigate('LungTab', { screen: 'History' })}>
             <Icon name="document-text" size={24} color={Colors.primary} />
             <Text style={styles.menuText}>My Reports</Text>
             <Icon name="chevron-forward" size={20} color={Colors.textSecondary} />

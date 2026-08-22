@@ -9,8 +9,7 @@
  * 'http://10.0.2.2:8000'
  */
 
-// Replace this with the real URL from Step 20
-export const API_BASE_URL = 'https://lungsenseai-api.onrender.com';
+export const API_BASE_URL = 'http://localhost:8000';
 
 // Configure timeouts (ms)
 export const TIMEOUTS = {

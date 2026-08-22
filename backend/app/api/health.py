@@ -1,9 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends, Query
 from datetime import datetime
 from schemas.health import HealthMetricCreate, BMIRequest, BMIResponse
-from models.health import serialize_health_metric
+from app.models.health import serialize_health_metric
 from utils.dependencies import get_current_user
-from database import get_database
+from app.db.mongodb import get_database
 
 router = APIRouter(prefix="/health", tags=["Health"])
 

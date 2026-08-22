@@ -2,9 +2,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from datetime import datetime
 from bson import ObjectId
 from schemas.health import MedicineReminderCreate
-from models.health import serialize_medicine_reminder
+from app.models.health import serialize_medicine_reminder
 from utils.dependencies import get_current_user
-from database import get_database
+from app.db.mongodb import get_database
 
 router = APIRouter(prefix="/medicines", tags=["Medicine Reminders"])
 

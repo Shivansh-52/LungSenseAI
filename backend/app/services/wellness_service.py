@@ -1,6 +1,6 @@
 from datetime import datetime
-from database import get_database
-from models.health import serialize_wellness_plan
+from app.db.mongodb import get_database
+from app.models.health import serialize_wellness_plan
 
 
 def generate_default_wellness_plan(health_profile: dict = None) -> dict:

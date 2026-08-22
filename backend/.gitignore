@@ -2,4 +2,6 @@
 *.env
 __pycache__/
 .venv/
-models/*.pth
+*.pyc
+.pytest_cache/
+results/

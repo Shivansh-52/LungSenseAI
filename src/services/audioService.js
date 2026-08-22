@@ -44,9 +44,17 @@ const startRecording = async () => {
 };
 
 const stopRecording = async () => {
-  const result = await audioRecorderPlayer.stopRecorder();
-  audioRecorderPlayer.removeRecordBackListener();
-  return result; // result contains filePath
+  try {
+    const result = await audioRecorderPlayer.stopRecorder();
+    audioRecorderPlayer.removeRecordBackListener();
+    return result; // result contains filePath
+  } catch (error) {
+    console.warn('Failed to stop recording cleanly:', error);
+    try {
+      audioRecorderPlayer.removeRecordBackListener();
+    } catch (e) {}
+    return null;
+  }
 };
 
 const play = async filePath => {

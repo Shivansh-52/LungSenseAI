@@ -1,3 +1,13 @@
+import os
+import sys
+
+# On Windows dev machines, add FFmpeg to PATH if needed.
+# On Linux (Render/production), FFmpeg is installed via apt and already in PATH.
+if sys.platform == "win32":
+    _ffmpeg_path = r"C:\Users\Shivansh\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.0-full_build\bin"
+    if _ffmpeg_path not in os.environ.get("PATH", ""):
+        os.environ["PATH"] = _ffmpeg_path + os.pathsep + os.environ.get("PATH", "")
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse

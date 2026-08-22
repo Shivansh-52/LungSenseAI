@@ -2,7 +2,9 @@ services:
   - type: web
     name: lungsenseai-api
     env: python
-    buildCommand: pip install -r requirements.txt
+    region: oregon
+    plan: free
+    buildCommand: apt-get install -y ffmpeg && pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
@@ -17,6 +19,6 @@ services:
         value: 10
       - key: CORS_ORIGINS
         value: "*"
-      # The following must be set via the Render Dashboard manually for security:
-      # - MONGODB_URI
-      # - JWT_SECRET_KEY
+      # Set these securely in the Render Dashboard:
+      # MONGODB_URI = your Atlas connection string
+      # JWT_SECRET_KEY = a long random secret

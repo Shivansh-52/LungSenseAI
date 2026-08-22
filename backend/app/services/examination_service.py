@@ -1,7 +1,7 @@
 from datetime import datetime
 from bson import ObjectId
-from database import get_database
-from models.examination import serialize_examination, serialize_analysis_result
+from app.db.mongodb import get_database
+from app.models.examination import serialize_examination, serialize_analysis_result
 
 
 async def create_examination(user_id: str, data: dict) -> dict:

@@ -2,9 +2,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 import io
 from services.report_service import generate_and_save_report
-from models.health import serialize_report
+from app.models.health import serialize_report
 from utils.dependencies import get_current_user
-from database import get_database
+from app.db.mongodb import get_database
 
 router = APIRouter(prefix="/reports", tags=["Reports"])
 

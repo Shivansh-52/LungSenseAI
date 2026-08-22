@@ -7,7 +7,7 @@ from reportlab.lib.colors import HexColor
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
-from database import get_database
+from app.db.mongodb import get_database
 from bson import ObjectId
 
 
@@ -193,7 +193,7 @@ async def generate_and_save_report(user: dict, examination_id: str) -> tuple:
         raise ValueError("Examination not found or access denied")
 
     # Serialize examination
-    from models.examination import serialize_examination, serialize_analysis_result
+    from app.models.examination import serialize_examination, serialize_analysis_result
     exam_serialized = serialize_examination(exam)
 
     # Fetch analysis result

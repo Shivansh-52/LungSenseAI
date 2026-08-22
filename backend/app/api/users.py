@@ -2,9 +2,9 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from datetime import datetime
 from bson import ObjectId
 from schemas.user import UserUpdate, HealthProfileCreate
-from models.user import serialize_user, serialize_health_profile
+from app.models.user import serialize_user, serialize_health_profile
 from utils.dependencies import get_current_user
-from database import get_database
+from app.db.mongodb import get_database
 
 router = APIRouter(prefix="/users", tags=["Users"])
 

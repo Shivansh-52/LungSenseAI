@@ -32,14 +32,21 @@ async def predict_disease_endpoint(request: Request, audio: UploadFile = File(..
         return JSONResponse(status_code=413, content={"success": False, "error": {"code": "FILE_TOO_LARGE", "message": f"Audio file exceeds the maximum size of {MAX_UPLOAD_SIZE_MB}MB."}})
 
     filename = audio.filename.lower()
-    if not (filename.endswith(".wav") or filename.endswith(".mp3") or filename.endswith(".m4a")):
-        return JSONResponse(status_code=400, content={"success": False, "error": {"code": "UNSUPPORTED_FORMAT", "message": "Only .wav, .mp3, and .m4a are supported."}})
+    if not (filename.endswith(".wav") or filename.endswith(".mp3") or filename.endswith(".m4a") or filename.endswith(".mp4")):
+        return JSONResponse(status_code=400, content={"success": False, "error": {"code": "UNSUPPORTED_FORMAT", "message": "Only .wav, .mp3, .m4a, and .mp4 are supported."}})
     
     temp_path = None
     try:
         fd, temp_path = tempfile.mkstemp(suffix=os.path.splitext(filename)[1])
         with os.fdopen(fd, "wb") as temp_file:
             shutil.copyfileobj(audio.file, temp_file)
+            
+        if not temp_path.lower().endswith('.wav'):
+            import subprocess
+            wav_path = temp_path + ".wav"
+            subprocess.run(["ffmpeg", "-y", "-i", temp_path, wav_path], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            os.remove(temp_path)
+            temp_path = wav_path
             
         prediction_result = predict_disease(temp_path)
         
@@ -78,8 +85,8 @@ async def predict(request: Request, audio: UploadFile = File(...), save_exam: bo
         return JSONResponse(status_code=413, content={"success": False, "error": {"code": "FILE_TOO_LARGE", "message": f"Audio file exceeds the maximum size of {MAX_UPLOAD_SIZE_MB}MB."}})
 
     filename = audio.filename.lower()
-    if not (filename.endswith(".wav") or filename.endswith(".mp3") or filename.endswith(".m4a")):
-        return JSONResponse(status_code=400, content={"success": False, "error": {"code": "UNSUPPORTED_FORMAT", "message": "Only .wav, .mp3, and .m4a are supported."}})
+    if not (filename.endswith(".wav") or filename.endswith(".mp3") or filename.endswith(".m4a") or filename.endswith(".mp4")):
+        return JSONResponse(status_code=400, content={"success": False, "error": {"code": "UNSUPPORTED_FORMAT", "message": "Only .wav, .mp3, .m4a, and .mp4 are supported."}})
     
     temp_path = None
     try:
@@ -87,10 +94,17 @@ async def predict(request: Request, audio: UploadFile = File(...), save_exam: bo
         with os.fdopen(fd, "wb") as temp_file:
             shutil.copyfileobj(audio.file, temp_file)
             
+        if not temp_path.lower().endswith('.wav'):
+            import subprocess
+            wav_path = temp_path + ".wav"
+            subprocess.run(["ffmpeg", "-y", "-i", temp_path, wav_path], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            os.remove(temp_path)
+            temp_path = wav_path
+            
         prediction_result = predict_audio(temp_path)
         
     except ValueError as e:
-        return JSONResponse(status_code=400, content={"success": False, "error": {"code": "INVALID_AUDIO", "message": "The uploaded audio could not be processed."}})
+        return JSONResponse(status_code=400, content={"success": False, "error": {"code": "INVALID_AUDIO", "message": f"The uploaded audio could not be processed. Detail: {str(e)}"}})
     except Exception as e:
         return JSONResponse(status_code=500, content={"success": False, "error": {"code": "INFERENCE_ERROR", "message": "Model inference failed."}})
     finally:

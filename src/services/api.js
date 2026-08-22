@@ -191,6 +191,16 @@ const getReportData = async (examinationId) => {
   return handleResponse(response);
 };
 
+const downloadExaminationPDF = async (examinationId) => {
+  const response = await fetch(`${API_BASE_URL}/examinations/${examinationId}/report`, {
+    headers: getHeaders(true),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to download PDF');
+  }
+  return response.blob();
+};
+
 // ── Wellness & Health Endpoints ──────────────────────────────────────────────
 
 const getHealthProfile = async () => {
@@ -274,6 +284,7 @@ export default {
   getExamination,
   deleteExamination,
   getReportData,
+  downloadExaminationPDF,
   getHealthProfile,
   updateHealthProfile,
   getWellnessToday,

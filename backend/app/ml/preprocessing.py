@@ -18,6 +18,9 @@ def pad_or_crop_audio(audio, target_length):
         return np.pad(audio, (0, padding), 'constant')
     return audio
 
+import subprocess
+import tempfile
+
 def preprocess_audio(file_path):
     config = load_config()
     
@@ -32,8 +35,29 @@ def preprocess_audio(file_path):
     f_min = config.get("f_min", 50)
     f_max = config.get("f_max", 4000)
     
-    # 1. Load and resample
-    audio, _ = librosa.load(file_path, sr=sr)
+    # 1. Ensure file is WAV format for librosa (soundfile doesn't support mp4)
+    wav_path = file_path
+    temp_wav = None
+    if not file_path.lower().endswith('.wav'):
+        fd, temp_wav = tempfile.mkstemp(suffix='.wav')
+        os.close(fd)
+        try:
+            subprocess.run(["ffmpeg", "-y", "-i", file_path, temp_wav], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            wav_path = temp_wav
+        except Exception as e:
+            if temp_wav and os.path.exists(temp_wav):
+                os.remove(temp_wav)
+            raise ValueError(f"FFmpeg conversion failed: {e}")
+
+    try:
+        # Load and resample
+        audio, _ = librosa.load(wav_path, sr=sr)
+    finally:
+        if temp_wav and os.path.exists(temp_wav):
+            try:
+                os.remove(temp_wav)
+            except Exception:
+                pass
     
     # 2. Peak amplitude normalization
     max_amp = np.max(np.abs(audio))

@@ -13,3 +13,4 @@ torchaudio==2.11.0
 librosa==1.0.0
 soundfile==0.14.0
 numpy==2.5.2
+scikit-learn==1.9.0
