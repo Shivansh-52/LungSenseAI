@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, PermissionsAndroid, Platform, Alert } from 'react-native';
 import { Colors } from '../constants/colors';
 import ProgressBar from '../components/ProgressBar';
-import { NativeModules, NativeEventEmitter } from 'react-native';
+import { NativeModules } from 'react-native';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -75,8 +75,9 @@ const StepsScreen = ({ navigation }) => {
   const startTracking = () => {
     if (StepCounter) {
       StepCounter.start();
-      const eventEmitter = new NativeEventEmitter(StepCounter);
-      eventEmitter.addListener('StepCounterUpdate', (event) => {
+      // Use DeviceEventEmitter to avoid NativeEventEmitter addListener warning
+      const { DeviceEventEmitter } = require('react-native');
+      DeviceEventEmitter.addListener('StepCounterUpdate', (event) => {
         setSteps(event.steps);
       });
     }

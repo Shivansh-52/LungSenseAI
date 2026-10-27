@@ -28,11 +28,13 @@ import HydrationScreen from '../screens/HydrationScreen';
 import SleepScreen from '../screens/SleepScreen';
 import ActivityScreen from '../screens/ActivityScreen';
 import RoutineScreen from '../screens/RoutineScreen';
+import ChatbotScreen from '../screens/ChatbotScreen';
 
 const Tab = createBottomTabNavigator();
 const LungStack = createNativeStackNavigator();
 const HealthStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
+const ChatStack = createNativeStackNavigator();
 const RootStack = createNativeStackNavigator();
 
 const LungStackNavigator = () => (
@@ -43,7 +45,14 @@ const LungStackNavigator = () => (
     <LungStack.Screen name="Result" component={ResultScreen} />
     <LungStack.Screen name="History" component={HistoryScreen} />
     <LungStack.Screen name="ExaminationDetail" component={ExaminationDetailScreen} />
+    <LungStack.Screen name="Chatbot" component={ChatbotScreen} />
   </LungStack.Navigator>
+);
+
+const ChatStackNavigator = () => (
+  <ChatStack.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
+    <ChatStack.Screen name="ChatbotMain" component={ChatbotScreen} />
+  </ChatStack.Navigator>
 );
 
 const ProfileStackNavigator = () => (
@@ -61,6 +70,7 @@ const HealthStackNavigator = () => (
     <HealthStack.Screen name="Sleep" component={SleepScreen} />
     <HealthStack.Screen name="Activity" component={ActivityScreen} />
     <HealthStack.Screen name="Routine" component={RoutineScreen} />
+    <HealthStack.Screen name="Chatbot" component={ChatbotScreen} />
   </HealthStack.Navigator>
 );
 
@@ -78,6 +88,8 @@ const TabNavigator = () => {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'LungTab') {
             iconName = focused ? 'medical' : 'medical-outline';
+          } else if (route.name === 'ChatTab') {
+            iconName = focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline';
           } else if (route.name === 'ProfileTab') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -102,6 +114,7 @@ const TabNavigator = () => {
     >
       <Tab.Screen name="HomeTab" component={HealthStackNavigator} options={{ title: 'Home' }} />
       <Tab.Screen name="LungTab" component={LungStackNavigator} options={{ title: 'Examination' }} />
+      <Tab.Screen name="ChatTab" component={ChatStackNavigator} options={{ title: 'AI Assistant' }} />
       {isAuthenticated && (
         <Tab.Screen name="ProfileTab" component={ProfileStackNavigator} options={{ title: 'Profile' }} />
       )}

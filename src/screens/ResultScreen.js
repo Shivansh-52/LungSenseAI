@@ -145,6 +145,23 @@ const ResultScreen = () => {
         {saveStatus ? <Text style={styles.saveStatus}>{saveStatus}</Text> : null}
 
         <View style={styles.buttonsContainer}>
+          <TouchableOpacity 
+            style={styles.chatButton} 
+            onPress={() => {
+              const examCtx = {
+                prediction: soundPrediction,
+                probabilities,
+                disease_prediction: diseaseResult,
+                created_at: new Date().toISOString(),
+              };
+              navigation.navigate('Chatbot', { examinationContext: examCtx });
+            }}
+            activeOpacity={0.8}
+          >
+            <Icon name="sparkles" size={20} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.chatButtonText}>Discuss Result with AI Assistant</Text>
+          </TouchableOpacity>
+
           {!isAuthenticated && (
             <TouchableOpacity style={styles.loginButton} onPress={() => navigation.navigate('Login')}>
               <Text style={styles.loginButtonText}>Login to view full report & save history</Text>
@@ -199,6 +216,21 @@ const styles = StyleSheet.create({
   probValue: { width: 35, fontSize: 12, color: Colors.textPrimary, textAlign: 'right' },
   modelInfo: { fontSize: 13, color: Colors.textSecondary, fontWeight: '500', textAlign: 'center', marginTop: 8 },
   buttonsContainer: { width: '100%', marginTop: 32 },
+  chatButton: {
+    backgroundColor: '#007AFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  chatButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   primaryButton: { backgroundColor: Colors.primary, paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginBottom: 12 },
   primaryButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   secondaryButton: { backgroundColor: Colors.cardBackground, paddingVertical: 16, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: Colors.border },

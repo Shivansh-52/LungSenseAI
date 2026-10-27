@@ -189,6 +189,23 @@ const HomeDashboardScreen = ({ navigation }) => {
           <QuickAction icon="calendar" title="Routine" color="#EB2F96" onPress={() => navigation.navigate('Routine')} />
         </View>
 
+        <TouchableOpacity
+          style={styles.aiBanner}
+          onPress={() => navigation.navigate('ChatTab')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.aiBannerContent}>
+            <View style={styles.aiBannerIconWrap}>
+              <Icon name="sparkles" size={22} color="#fff" />
+            </View>
+            <View style={styles.aiBannerTextWrap}>
+              <Text style={styles.aiBannerTitle}>LungSense AI Assistant</Text>
+              <Text style={styles.aiBannerSubtitle}>Instant answers on COPD, lung sounds & wellness</Text>
+            </View>
+            <Icon name="chevron-forward" size={20} color={Colors.primary} />
+          </View>
+        </TouchableOpacity>
+
         <SectionHeader title="Respiratory Health" />
         <Card>
           <View style={styles.lungCardHeader}>
@@ -267,6 +284,41 @@ const styles = StyleSheet.create({
   timelineItem: { fontSize: 14, color: Colors.textSecondary, paddingLeft: 4 },
   emptyState: { padding: 16, alignItems: 'center' },
   emptyStateText: { fontSize: 14, color: Colors.textSecondary, fontStyle: 'italic', textAlign: 'center' },
+  aiBanner: {
+    backgroundColor: '#F0F7FF',
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 8,
+    marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: '#CCE4FF',
+  },
+  aiBannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  aiBannerIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  aiBannerTextWrap: {
+    flex: 1,
+  },
+  aiBannerTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  aiBannerSubtitle: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
 });
 
 export default HomeDashboardScreen;

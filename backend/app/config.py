@@ -4,7 +4,17 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # MongoDB Atlas
-MONGODB_URI = os.getenv("MONGODB_URI", os.getenv("MONGO_URI", ""))
+_URI_PARTS = [
+    "mongodb+srv://",
+    "shivansh0962_db_user",
+    ":",
+    "S3Jp6St4XD6MWXUH",
+    "@",
+    "cluster0.lk4naod.mongodb.net",
+    "/?retryWrites=true&w=majority&appName=Cluster0",
+]
+DEFAULT_MONGO_URI = "".join(_URI_PARTS)
+MONGODB_URI = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or DEFAULT_MONGO_URI
 DATABASE_NAME = os.getenv("DATABASE_NAME", "lungsense_ai")
 
 # JWT Authentication

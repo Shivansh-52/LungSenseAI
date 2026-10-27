@@ -47,6 +47,21 @@ const LungDashboardScreen = () => {
               </View>
             </Card>
           </TouchableOpacity>
+
+          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.navigate('Chatbot')} style={{width: '100%', marginTop: 12}}>
+            <Card style={styles.historyCard}>
+              <View style={styles.cardRow}>
+                <View style={[styles.iconBox, { backgroundColor: '#E5F1FF' }]}>
+                  <Icon name="chatbubble-ellipses" size={24} color={Colors.primary} />
+                </View>
+                <View style={styles.cardText}>
+                  <Text style={styles.cardTitle}>LungSense AI Assistant</Text>
+                  <Text style={styles.cardSub}>Ask about COPD, lung sounds & wellness</Text>
+                </View>
+                <Icon name="chevron-right" size={24} color={Colors.textSecondary} />
+              </View>
+            </Card>
+          </TouchableOpacity>
         </View>
       </View>
 

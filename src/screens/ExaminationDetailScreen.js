@@ -130,6 +130,15 @@ const ExaminationDetailScreen = ({ navigation, route }) => {
             <Text style={styles.summaryTitle}>AI Summary</Text>
           </View>
           <Text style={styles.summaryText}>{generateSummary()}</Text>
+          <TouchableOpacity
+            style={styles.askAiInlineBtn}
+            onPress={() => navigation.navigate('Chatbot', { examinationContext: examination })}
+            activeOpacity={0.8}
+          >
+            <Icon name="chatbubble-ellipses" size={16} color={Colors.primary} style={{ marginRight: 6 }} />
+            <Text style={styles.askAiInlineText}>Ask AI to explain this finding</Text>
+            <Icon name="arrow-forward" size={14} color={Colors.primary} style={{ marginLeft: 4 }} />
+          </TouchableOpacity>
         </Card>
 
         <Card style={[styles.resultCard, { borderColor: statusColor }]}>
@@ -204,6 +213,21 @@ const ExaminationDetailScreen = ({ navigation, route }) => {
         )}
 
         <View style={styles.actionContainer}>
+          <TouchableOpacity 
+            style={styles.aiChatCard} 
+            onPress={() => navigation.navigate('Chatbot', { examinationContext: examination })}
+            activeOpacity={0.8}
+          >
+            <View style={styles.aiChatIconContainer}>
+              <Icon name="sparkles" size={20} color="#fff" />
+            </View>
+            <View style={styles.aiChatTextContainer}>
+              <Text style={styles.aiChatTitle}>Discuss Result with AI</Text>
+              <Text style={styles.aiChatSub}>Ask questions about this {predictedClass || 'sound'} & COPD risk</Text>
+            </View>
+            <Icon name="chevron-forward" size={20} color={Colors.primary} />
+          </TouchableOpacity>
+
           <TouchableOpacity 
             style={styles.pdfButton} 
             onPress={handleDownloadPDF}
@@ -290,6 +314,51 @@ const styles = StyleSheet.create({
     marginTop: 30, opacity: 0.8,
   },
   disclaimerText: { fontSize: 12, color: Colors.warning, marginLeft: 6 },
+  askAiInlineBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#CCE4FF',
+  },
+  askAiInlineText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.primary,
+  },
+  aiChatCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0F7FF',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 14,
+    borderWidth: 1.5,
+    borderColor: '#CCE4FF',
+  },
+  aiChatIconContainer: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  aiChatTextContainer: {
+    flex: 1,
+  },
+  aiChatTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  aiChatSub: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
 });
 
 export default ExaminationDetailScreen;

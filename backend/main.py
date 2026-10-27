@@ -1,5 +1,7 @@
 import os
 import sys
+import asyncio
+from datetime import datetime, timezone
 
 # On Windows dev machines, add FFmpeg to PATH if needed.
 # On Linux (Render/production), FFmpeg is installed via apt and already in PATH.
@@ -86,23 +88,58 @@ app.include_router(wellness_router)
 app.include_router(health_profiles_router)
 
 
-# ── Health Endpoint ───────────────────────────────────────────────────────────
+# ── Health & Keep-Alive Endpoints (Optimized for UptimeRobot & Render) ─────────
 
-@app.get("/health")
+@app.api_route("/", methods=["GET", "HEAD"])
+async def root():
+    """
+    Root endpoint for UptimeRobot keep-alive monitoring.
+    Returns HTTP 200 immediately to prevent Render free-tier instance from sleeping.
+    """
+    return {
+        "status": "online",
+        "service": "LungSense AI API",
+        "version": "2.0.0",
+        "keep_alive": "active",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@app.api_route("/ping", methods=["GET", "HEAD"])
+async def ping():
+    """
+    Ultra-lightweight ping endpoint for zero-latency monitoring.
+    """
+    return {
+        "ping": "pong",
+        "status": "alive",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health_check():
-    """Health check endpoint with database and model status."""
+    """
+    Health check endpoint with database and model status.
+    Uses a 1.5s timeout safeguard so slow external DB responses never cause UptimeRobot timeouts.
+    """
     db = get_database()
-    db_status = True if db is not None else False
+    db_status = False
 
-    try:
-        if db is not None:
-            await db.command("ping")
-    except Exception:
-        db_status = False
+    if db is not None:
+        try:
+            # 3.5s timeout to ensure reliable response across cloud regions
+            await asyncio.wait_for(db.command("ping"), timeout=3.5)
+            db_status = True
+        except Exception:
+            db_status = False
 
     return {
         "status": "healthy",
+        "service": "LungSense AI API",
         "model_loaded": is_model_loaded(),
         "disease_model_loaded": is_disease_model_loaded(),
-        "database_connected": db_status
+        "database_connected": db_status,
+        "keep_alive": "active",
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
